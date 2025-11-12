@@ -1,0 +1,44 @@
+# Core FastAPI
+fastapi==0.104.1
+uvicorn==0.24.0
+python-multipart==0.0.6
+
+#PyTorch & GPU (install separately)
+#Install GPU-enabled PyTorch and CUDA 12.1:
+#pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+#(Or) using Conda:
+#conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
+#bitsandbytes for 4-bit / 8-bit quantization (install after GPU PyTorch):
+#pip install bitsandbytes
+
+# LLM and NLP
+transformers>=4.38.0
+sentence-transformers>=2.5.0
+accelerate>=0.27.0
+huggingface-hub>=0.20.0
+nltk==3.8.1
+
+# Vector DB and RAG
+chromadb==0.4.15
+
+# Document Processing
+PyPDF2==3.0.1
+python-docx==1.1.0
+
+# Data handling
+pydantic>=2.7.4
+
+# Additional utilities
+python-dateutil==2.8.2
+
+# Testing
+pytest>=8.3.0
+pytest-cov>=5.0.0
+coverage>=7.3.0
+httpx>=0.27.2
+pytest-asyncio>=0.23.0
+
+# Code Formatting and Linting
+black>=23.0.0
+isort>=5.12.0
+pylint>=3.0.0
