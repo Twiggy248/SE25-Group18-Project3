@@ -22,7 +22,7 @@ jobs:
         python-version: '3.11'
     
     - name: Install dependencies
-      working-directory: ./proj2/backend
+      working-directory: ./backend
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then
@@ -33,7 +33,7 @@ jobs:
         pip install transformers sentence-transformers fastapi uvicorn python-multipart
     
     - name: Run backend tests with coverage
-      working-directory: ./proj2/backend
+      working-directory: ./backend
       env:
         TESTING: "true"
         PYTHONPATH: .
@@ -51,13 +51,13 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        files: ./proj2/backend/coverage.xml
+        files: ./backend/coverage.xml
         flags: backend
         name: backend-coverage
     
     - name: Extract backend coverage
       id: backend-coverage
-      working-directory: ./proj2/backend
+      working-directory: ./backend
       run: |
         if [ -f coverage.xml ]; then
           COVERAGE=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage.xml'); root = tree.getroot(); print(round(float(root.attrib['line-rate']) * 100, 1))")
@@ -88,11 +88,11 @@ jobs:
         node-version: '20'
     
     - name: Install dependencies
-      working-directory: ./proj2/frontend
+      working-directory: ./frontend
       run: npm install
     
     - name: Run frontend tests with coverage
-      working-directory: ./proj2/frontend
+      working-directory: ./frontend
       continue-on-error: true
       run: |
         if grep -q "test:coverage" package.json; then
@@ -108,13 +108,13 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        files: ./proj2/frontend/coverage/lcov.info
+        files: ./frontend/coverage/lcov.info
         flags: frontend
         name: frontend-coverage
     
     - name: Extract frontend coverage
       id: frontend-coverage
-      working-directory: ./proj2/frontend
+      working-directory: ./frontend
       run: |
         if [ -f coverage/coverage-summary.json ]; then
           COVERAGE=$(node -e "const fs=require('fs'); const cov=JSON.parse(fs.readFileSync('coverage/coverage-summary.json')); console.log(cov.total.lines.pct);")
