@@ -61,8 +61,8 @@ llm_output.log
 *.db
 *.sqlite
 *.sqlite3
-requirements.db
-test_requirements*.db
+backend/requirements.db
+backend/test_requirements*.db
 
 # Vector database
 vector_store/
