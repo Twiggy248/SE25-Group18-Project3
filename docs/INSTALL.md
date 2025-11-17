@@ -135,7 +135,15 @@ cd CSC510-SE-Group17/proj2
 
    After obtaining your huggingface token, you must fill out this [FORM](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct) to gain access to the model. You will have to wait for approval (<20 min approx).
 
-7. **Initialize the database:**
+6. **Include Google OAuth 2.0 Credentials in .env:**
+
+   ```bash
+      #Get credentials from https://console.cloud.google.com/
+      CLIENT_ID=""
+      CLIENT_SECRET=""
+   ```
+
+8. **Initialize the database:**
    ```bash
    python -c "import db; db.init_db()"
    ```
