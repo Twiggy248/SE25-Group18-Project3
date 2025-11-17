@@ -14,6 +14,7 @@ const API_BASE_URL = 'http://localhost:8000';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -29,6 +30,10 @@ apiClient.interceptors.response.use(
 );
 
 export const api = {
+  login: () => {
+    window.location.href = "http://localhost:8000/auth/google"
+  },
+
   // Session Management
   createSession: (data) => apiClient.post('/session/create', data),
   updateSession: (data) => apiClient.post('/session/update', data),
@@ -76,6 +81,10 @@ export const api = {
 
   // Health Check
   health: () => apiClient.get('/health'),
+
+  //Logout 
+  me: () => apiClient.get('http://localhost:8000/auth/me', { withCredentials: true }),
+  logout: () => apiClient.post('/auth/logout'),
 };
 
 export default apiClient;
