@@ -13,7 +13,7 @@ import { api } from '../api/client';
 import { toast } from 'react-toastify';
 import useSessionStore from '../store/useSessionStore';
 import FileUploader from '../components/FileUploader';
-import SessionHeader from '../components/Layout/SessionHeader';
+import SessionHeader from '../components/layout/SessionHeader';
 
 function Chat() {
   const { currentSessionId, setCurrentSession } = useSessionStore();

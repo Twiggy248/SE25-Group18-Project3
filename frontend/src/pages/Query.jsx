@@ -12,7 +12,7 @@ import React, { useState } from 'react';
 import { api } from '../api/client';
 import { toast } from 'react-toastify';
 import useSessionStore from '../store/useSessionStore';
-import SessionHeader from '../components/Layout/SessionHeader';
+import SessionHeader from '../components/layout/SessionHeader';
 
 function Query() {
   const { currentSessionId } = useSessionStore();

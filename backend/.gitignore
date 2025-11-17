@@ -20,3 +20,6 @@ htmlcov/
 # Environment variables
 .env
 .env.local
+
+requirements.db
+test_requirements*.db
