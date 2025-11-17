@@ -20,11 +20,12 @@ import Header from './components/layout/Header';
 // Pages
 import Chat from './pages/Chat';
 import Extraction from './pages/Extraction';
-// ❌ REMOVED: import Analytics from './pages/Analytics';
 import Export from './pages/Export';
 import Query from './pages/Query';
 import UseCaseDetail from './pages/UseCaseDetail';
 import UseCaseRefine from './pages/UseCaseRefine';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './pages/Login'
 
 function App() {
   return (
@@ -41,13 +42,13 @@ function App() {
           {/* Page Content */}
           <main className="flex-1 overflow-y-auto">
             <Routes>
-              <Route path="/" element={<Chat />} />
-              <Route path="/extraction" element={<Extraction />} />
-              {/* ❌ REMOVED: <Route path="/analytics" element={<Analytics />} /> */}
-              <Route path="/export" element={<Export />} />
-              <Route path="/query" element={<Query />} />
-              <Route path="/use-case/:id" element={<UseCaseDetail />} />
-              <Route path="/use-case/:id/refine" element={<UseCaseRefine />} />
+              <Route path="/" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+              <Route path="/extraction" element={<ProtectedRoute><Extraction /></ProtectedRoute>} />
+              <Route path="/export" element={<ProtectedRoute><Export /></ProtectedRoute>} />
+              <Route path="/query" element={<ProtectedRoute><Query /></ProtectedRoute>} />
+              <Route path="/use-case/:id" element={<ProtectedRoute><UseCaseDetail /></ProtectedRoute>} />
+              <Route path="/use-case/:id/refine" element={<ProtectedRoute><UseCaseRefine /></ProtectedRoute>} />
+              <Route path="/login" element={<Login />}/>
             </Routes>
           </main>
         </div>
