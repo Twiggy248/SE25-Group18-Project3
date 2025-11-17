@@ -57,6 +57,11 @@ function Dashboard() {
           </p>
         </div>
 
+        <button onClick={() => apiClient.post("/auth/logout").then(() => window.location = "/login")}
+        className='text-sm text-gray-600 hover:text-gray-900'>
+          Logout
+        </button>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow-sm border">

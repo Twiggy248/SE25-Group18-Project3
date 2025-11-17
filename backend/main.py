@@ -13,15 +13,15 @@ import os
 import re
 import sqlite3
 import time
-import traceback
 import uuid
+import requests
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import torch
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse, JSONResponse 
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
@@ -37,13 +37,27 @@ from export_utils import export_to_docx, export_to_markdown, export_to_plantuml
 from rag_utils import build_memory_context
 from use_case_enrichment import enrich_use_case
 from use_case_validator import UseCaseValidator
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+from dotenv import load_dotenv
+
 
 app = FastAPI()
+load_dotenv()
+
+# --- Google OAuth --- 
+CLIENT_ID = os.getenv("CLIENT_ID")
+CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+REDIRECT_URI = "http://localhost:8000/auth/callback"
+
 
 # --- CORS ---
+origins = [
+    "http://localhost:5173",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -1400,45 +1414,166 @@ def parse_large_document_chunked(
 # ENDPOINTS
 # ============================================================================
 
+def session_belongs_to_user(session_id: str, user_id: str) -> bool:
+    db = sqlite3.connect(get_db_path())
+    c = db.cursor()
+    c.execute("SELECT 1 FROM sessions WHERE session_id = ? AND user_id = ?", (session_id, user_id))
+    row = c.fetchone()
+    db.close()
+    return row is not None
+
+
+@app.get("/auth/google")
+def auth_google():
+    url = (
+        "https://accounts.google.com/o/oauth2/v2/auth"
+        "?response_type=code"
+        f"&client_id={CLIENT_ID}"
+        f"&redirect_uri={REDIRECT_URI}"
+        "&scope=openid%20email%20profile"
+        "&access_type=offline"
+        "&prompt=consent"
+    )
+
+    return RedirectResponse(url)
+
+@app.get("/auth/callback")
+def auth_callback(code: str):
+    token_url = "https://oauth2.googleapis.com/token"
+    data = {
+        "code": code, 
+        "client_id": CLIENT_ID, 
+        "client_secret": CLIENT_SECRET, 
+        "redirect_uri": REDIRECT_URI, 
+        "grant_type": "authorization_code"
+    }
+
+    token_res = requests.post(token_url, data=data).json()
+
+    if "id_token" not in token_res: 
+        raise HTTPException(status_code=400, detail="Invalid token exchange")
+    
+    #verifying Google ID token 
+    try: 
+        idinfo = id_token.verify_oauth2_token(
+            token_res["id_token"], 
+            google_requests.Request(), 
+            CLIENT_ID
+        )
+    except Exception: 
+        raise HTTPException(400, "Invalid ID token")
+    
+    google_sub = idinfo["sub"]
+    email = idinfo.get("email")
+    name = idinfo.get("name")
+    picture = idinfo.get("picture")
+
+    db = sqlite3.connect(get_db_path())
+    c = db.cursor()
+
+    c.execute("SELECT id FROM users WHERE id = ?", (google_sub, ))
+    user = c.fetchone()
+
+    if not user: 
+        c.execute(
+            "INSERT INTO users (id, email, name, picture) VALUES (?, ?, ?, ?)", 
+            (google_sub, email, name, picture)
+        )
+
+        db.commit()
+    
+    db.close()
+
+    #store user_id in session cookie 
+    response = RedirectResponse(url="http://localhost:5173")
+    response.set_cookie("user_id", google_sub, httponly=True)
+
+    return response
+
+
+@app.get("/auth/me")
+def auth_me(request: Request):
+    uid = request.cookies.get("user_id")
+
+    if not uid: 
+        return JSONResponse({"authenticated": False})
+    
+    db = sqlite3.connect(get_db_path())
+    c = db.cursor()
+
+    c.execute("SELECT id, email, name, picture FROM users WHERE id = ?", (uid,))
+    user = c.fetchone()
+
+    if not user: 
+        return JSONResponse({"authenticated": False})
+    
+    return{
+        "authenticated": True, 
+        "id": user[0], 
+        "email": user[1], 
+        "name": user[2], 
+        "picture": user[3],
+    }
+
+@app.post("/auth/logout")
+def logout_user(response: Response):
+    response.delete_cookie("user_id")
+    return {"success": True}
+
+
+def require_user(request: Request) -> str:
+    uid = request.cookies.get("user_id")
+    if not uid: 
+        raise HTTPException(401, "Not authenticated")
+    return uid
 
 @app.post("/session/create")
-def create_or_get_session(request: SessionRequest):
+def create_or_get_session(request: SessionRequest, request_obj: Request):
     """Create a new session or retrieve existing session info"""
+    user_id = require_user(request_obj)
     session_id = request.session_id or str(uuid.uuid4())
 
     create_session(
         session_id=session_id,
+        user_id=user_id,
         project_context=request.project_context or "",
         domain=request.domain or "",
     )
 
-    context = get_session_context(session_id)
-
     return {
         "session_id": session_id,
-        "context": context,
+        "context": get_session_context(session_id),
         "message": "Session created/retrieved successfully",
     }
 
 
 @app.post("/session/update")
-def update_session(request: SessionRequest):
+def update_session(request_data: SessionRequest, request: Request):
     """Update session context as conversation progresses"""
+    user_id = require_user(request)
+
     if not request.session_id:
         raise HTTPException(status_code=400, detail="session_id is required")
+    
+    if not session_belongs_to_user(request_data.session_id, user_id):
+        raise HTTPException(403, "Forbidden")
 
     update_session_context(
-        session_id=request.session_id,
-        project_context=request.project_context,
-        domain=request.domain,
+        session_id=request_data.session_id,
+        project_context=request_data.project_context,
+        domain=request_data.domain,
     )
 
-    return {"message": "Session updated", "session_id": request.session_id}
+    return {"message": "Session updated", "session_id": request_data.session_id}
 
 
 @app.get("/session/{session_id}/title")
-def get_session_title_endpoint(session_id: str):
+def get_session_title_endpoint(session_id: str, request:Request):
     """Get session title"""
+    user_id = require_user(request)
+    if not session_belongs_to_user(session_id, user_id):
+        raise HTTPException(403, "Forbidden")
+
     title = get_session_title(session_id)
     if title is None:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -1447,8 +1582,12 @@ def get_session_title_endpoint(session_id: str):
 
 
 @app.get("/session/{session_id}/history")
-def get_session_history(session_id: str, limit: int = 10):
+def get_session_history(request: Request, session_id: str, limit: int = 10):
     """Get conversation history for a session"""
+    user_id = require_user(request)
+    if not session_belongs_to_user(session_id, user_id):
+        raise HTTPException(403, "Forbidden")
+
     history = get_conversation_history(session_id, limit)
     context = get_session_context(session_id)
     use_cases = get_session_use_cases(session_id)
@@ -1464,7 +1603,7 @@ def get_session_history(session_id: str, limit: int = 10):
 
 
 @app.post("/parse_use_case_rag/")
-def parse_use_case_fast(request: InputText):
+def parse_use_case_fast(request: InputText, request_data: Request):
     """
     SMART EXTRACTION with intelligent use case estimation
     - Auto-detects number of use cases in text
@@ -1474,6 +1613,7 @@ def parse_use_case_fast(request: InputText):
     """
 
     session_id = request.session_id or str(uuid.uuid4())
+    user_id = require_user(request_data)
 
     # Smart session handling
     existing_context = get_session_context(session_id)
@@ -1485,6 +1625,7 @@ def parse_use_case_fast(request: InputText):
         # Session doesn't exist - create it with provided context and title
         create_session(
             session_id=session_id,
+            user_id=user_id,
             project_context=request.project_context or "",
             domain=request.domain or "",
             session_title=session_title,
@@ -1771,6 +1912,7 @@ def parse_use_case_fast(request: InputText):
 
 @app.post("/parse_use_case_document/")
 async def parse_use_case_from_document(
+    request: Request,
     file: UploadFile = File(...),
     session_id: Optional[str] = Form(None),
     project_context: Optional[str] = Form(None),
@@ -1829,6 +1971,7 @@ async def parse_use_case_from_document(
         
         create_session(
             session_id=session_id,
+            user_id=require_user(request),
             project_context=project_context or "",
             domain=domain or "",
             session_title=session_title,
@@ -1975,8 +2118,15 @@ Return the refined use case in the same JSON format, with improvements applied.
 
 
 @app.post("/query")
-def query_requirements(request: QueryRequest):
+def query_requirements(request: QueryRequest, request_data: Request):
     """Answer natural language questions about requirements"""
+
+    user_id = require_user(request_data)
+    session_id = request.session_id
+
+    if not session_belongs_to_user(session_id, user_id):
+        raise HTTPException(403, "Forbidden")
+
 
     use_cases = get_session_use_cases(request.session_id)
 
@@ -2066,8 +2216,13 @@ Provide a clear, helpful answer based on the use cases above. Do not include any
 
 
 @app.get("/session/{session_id}/export/docx")
-def export_docx_endpoint(session_id: str):
+def export_docx_endpoint(session_id: str, request: Request):
     """Export use cases to Word document"""
+
+    user_id = require_user(request)
+    if not session_belongs_to_user(session_id, user_id):
+        raise HTTPException(403, "Forbidden")
+
 
     use_cases = get_session_use_cases(session_id)
     session_context = get_session_context(session_id)
@@ -2089,8 +2244,13 @@ def export_docx_endpoint(session_id: str):
 
 
 @app.get("/session/{session_id}/export/markdown")
-def export_markdown_endpoint(session_id: str):
+def export_markdown_endpoint(session_id: str, request:Request):
     """Export as Markdown document"""
+
+    user_id = require_user(request)
+    if not session_belongs_to_user(session_id, user_id):
+        raise HTTPException(403, "Forbidden")
+
 
     use_cases = get_session_use_cases(session_id)
     session_context = get_session_context(session_id)
@@ -2110,8 +2270,13 @@ def export_markdown_endpoint(session_id: str):
 
 
 @app.delete("/session/{session_id}")
-def clear_session(session_id: str):
+def clear_session(session_id: str, request:Request):
     """Clear all data for a specific session"""
+    user_id = require_user(request)
+    if not session_belongs_to_user(session_id, user_id):
+        raise HTTPException(403, "Forbidden")
+
+
     db_path = get_db_path()
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
@@ -2284,69 +2449,51 @@ def generate_fallback_title(text: str, max_length: int = 50) -> str:
 
 # Update the list_sessions endpoint to use improved title generation
 @app.get("/sessions/")
-def list_sessions():
+def list_sessions(request: Request):
     """List all active sessions with stored titles"""
+    user_id = require_user(request)
+    
     db_path = get_db_path()
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
 
-    try:
-        # Try getting sessions with session_title
-        c.execute(
-            """
-            SELECT session_id, project_context, domain, session_title, created_at, last_active
-            FROM sessions
-            ORDER BY last_active DESC
+
+    c.execute(
         """
-        )
-    except sqlite3.OperationalError:
-        # Fallback if session_title doesn't exist yet
-        c.execute(
-            """
-            SELECT session_id, project_context, domain, created_at, last_active
-            FROM sessions
-            ORDER BY last_active DESC
-        """
-        )
+        SELECT session_id, project_context, domain, session_title, created_at, last_active
+        FROM sessions
+        WHERE user_id = ?
+        ORDER BY last_active DESC
+    """, (user_id,)
+    )
 
     rows = c.fetchall()
+    conn.close()
 
     # Return sessions with stored titles
-    sessions_with_titles = []
+    sessions= []
     for row in rows:
-        session_id = row[0]
-        project_context = row[1] or ""
-        domain = row[2] or ""
-
-        # Handle both cases (with and without session_title column)
-        if len(row) == 6:  # With session_title
-            session_title = row[3] if row[3] else "New Session"
-            created_at = row[4]
-            last_active = row[5]
-        else:  # Without session_title
-            session_title = "New Session"
-            created_at = row[3]
-            last_active = row[4]
-
-        sessions_with_titles.append(
+        sessions.append(
             {
-                "session_id": session_id,
-                "session_title": session_title,
-                "project_context": project_context,
-                "domain": domain,
-                "created_at": created_at,
-                "last_active": last_active,
+                "session_id": row[0],
+                "session_title": row[3] or "New Session",
+                "project_context": row[1] or "",
+                "domain": row[2] or "",
+                "created_at": row[4],
+                "last_active": row[5],
             }
         )
 
-    conn.close()
-
-    return {"sessions": sessions_with_titles}
+    return {"sessions": sessions}
 
 
 @app.get("/session/{session_id}/export")
-def export_session(session_id: str):
+def export_session(session_id: str, request: Request):
     """Export all session data for backup or analysis"""
+    user_id = require_user(request)
+    if not session_belongs_to_user(session_id, user_id):
+        raise HTTPException(403, "Forbidden")
+
     conversation = get_conversation_history(session_id, limit=1000)
     context = get_session_context(session_id)
     use_cases = get_session_use_cases(session_id)

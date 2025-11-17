@@ -61,6 +61,13 @@ def migrate_db(reset: bool = False):
             print("Adding session_title column to sessions table...")
             c.execute("ALTER TABLE sessions ADD COLUMN session_title TEXT")
 
+        # Check if user_id column exists 
+        try: 
+            c.execute("SELECT user_id FROM sessions LIMIT 1")
+        except sqlite3.OperationalError: 
+            print("Adding user_id column to sessions table...")
+            c.execute("ALTER TABLE sessions ADD COLUMN user_id TEXT")
+
         # Update existing NULL session_title values
         c.execute(
             """
@@ -169,12 +176,25 @@ def init_db():
         "CREATE INDEX IF NOT EXISTS idx_summaries_session_id ON session_summaries(session_id)"
     )
 
+    # Users Table 
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY, 
+            email TEXT UNIQUE,
+            name TEXT, 
+            picture TEXT
+        )
+    """
+    )
+
     conn.commit()
     conn.close()
 
 
 def create_session(
     session_id: str,
+    user_id: str,
     project_context: str = "",
     domain: str = "",
     session_title: str = "New Session",
@@ -186,12 +206,12 @@ def create_session(
 
     c.execute(
         """
-        INSERT INTO sessions (session_id, project_context, domain, user_preferences, session_title)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO sessions (session_id, user_id, project_context, domain, user_preferences, session_title)
+        VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(session_id) DO UPDATE SET
             last_active = CURRENT_TIMESTAMP
     """,
-        (session_id, project_context, domain, json.dumps({}), session_title),
+        (session_id, user_id, project_context, domain, json.dumps({}), session_title),
     )
 
     conn.commit()

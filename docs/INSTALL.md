@@ -122,7 +122,7 @@ cd CSC510-SE-Group17/proj2
    pip install bitsandbytes
    ```
 
-5. **Set up Hugging Face authentication:**
+5. **Set up Hugging Face authentication in .env:**
    ```bash
    # Get token from https://huggingface.co/settings/tokens
    export HF_TOKEN="your_huggingface_token_here"
@@ -131,10 +131,87 @@ cd CSC510-SE-Group17/proj2
    set HF_TOKEN=your_huggingface_token_here
    ```
 
-6. **Initialize the database:**
+   NOTE:
+
+   After obtaining your huggingface token, you must fill out this [FORM](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct) to gain access to the model. You will have to wait for approval (<20 min approx).
+
+6. **Include Google OAuth 2.0 Credentials in .env:**
+
+   ```bash
+      #Get credentials from https://console.cloud.google.com/
+      CLIENT_ID=""
+      CLIENT_SECRET=""
+   ```
+
+8. **Initialize the database:**
    ```bash
    python -c "import db; db.init_db()"
    ```
+
+### MacOS Further Instructions 
+
+Due to hardware & CUDA constraints, please make the following changes to the ```MODEL LOADING``` section
+in ```main.py```
+
+```bash
+if not os.getenv("TESTING"):
+    # --- Load LLaMA 3.2 3B Instruct ---
+    MODEL_NAME = "meta-llama/Llama-3.2-1B-Instruct"
+    token = os.getenv("HF_TOKEN")
+
+    # from transformers import BitsAndBytesConfig
+
+    # Configure 4-bit quantization for RTX 3050
+    # bnb_config = BitsAndBytesConfig(
+    #     load_in_4bit=True,
+    #     bnb_4bit_quant_type="nf4",
+    #     bnb_4bit_use_double_quant=True,
+    #     bnb_4bit_compute_dtype=torch.float16,
+    # )
+
+    # Disable CUDA/MPS allocator warmup
+    from transformers import modeling_utils
+    modeling_utils._caching_allocator_enabled = False
+
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, token=token)
+
+    # Load model with 4-bit quantization
+    # model = AutoModelForCausalLM.from_pretrained(
+    #     MODEL_NAME,
+    #     quantization_config=bnb_config,
+    #     device_map="auto",
+    #     token=token,
+    #     torch_dtype=torch.float16,
+    #     low_cpu_mem_usage=True,
+    # )
+
+    device = "mps" if torch.backends.mps.is_available() else "cpu"
+    dtype = torch.float16 if device == "mps" else torch.float32
+
+    model = AutoModelForCausalLM.from_pretrained(
+        MODEL_NAME,
+        # quantization_config=bnb_config,
+        device_map={"": device},
+        token=token,
+        torch_dtype=dtype,
+        low_cpu_mem_usage=True,
+    )
+
+    pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, device_map={"": device}, torch_dtype=dtype)
+    embedder = SentenceTransformer("all-MiniLM-L6-v2")
+    chunker = DocumentChunker(max_tokens=3000)
+else:
+    print("⚠️  Testing mode: Model loading skipped")
+    MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"  # Define for tests
+    tokenizer = None
+    model = None
+    pipe = None
+    embedder = None
+    chunker = None
+```
+Note the commented out sections, added lines, and changing the ```MODEL_NAME``` from ```3B``` to ```1B```
+
+If after following the MacOS Instructions you still recieve errors regarding access, try running ```hf auth login```. 
 
 ### Step 3: Frontend Setup
 
