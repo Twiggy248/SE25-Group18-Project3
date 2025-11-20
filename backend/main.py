@@ -40,15 +40,12 @@ from use_case_validator import UseCaseValidator
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from dotenv import load_dotenv
-
+from models import UseCaseSchema, InputText, RefinementRequest, QueryRequest
+from routers import require_user
+from api_routers.api_session import session_belongs_to_user
 
 app = FastAPI()
 load_dotenv()
-
-# --- Google OAuth --- 
-CLIENT_ID = os.getenv("CLIENT_ID")
-CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-REDIRECT_URI = "http://localhost:8000/auth/callback"
 
 
 # --- CORS ---
@@ -71,42 +68,6 @@ except Exception as e:
     print(f"Database initialization error: {str(e)}")
     print("Attempting database reset...")
     migrate_db(reset=True)  # Reset and recreate database
-
-
-# --- Schemas ---
-class UseCaseSchema(BaseModel):
-    title: str
-    preconditions: List[str]
-    main_flow: List[str]
-    sub_flows: List[str]
-    alternate_flows: List[str]
-    outcomes: List[str]
-    stakeholders: List[str]
-
-
-class InputText(BaseModel):
-    raw_text: str
-    session_id: Optional[str] = None
-    project_context: Optional[str] = None
-    domain: Optional[str] = None
-
-
-class SessionRequest(BaseModel):
-    session_id: Optional[str] = None
-    project_context: Optional[str] = None
-    domain: Optional[str] = None
-
-
-class RefinementRequest(BaseModel):
-    use_case_id: int
-    refinement_type: str
-    custom_instruction: Optional[str] = None
-
-
-class QueryRequest(BaseModel):
-    session_id: str
-    question: str
-
 
 # --- Load LLaMA 3.2 3B Instruct ---
 # Add this RIGHT BEFORE: MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
@@ -1410,888 +1371,11 @@ def parse_large_document_chunked(
     }
 
 
-# ============================================================================
-# ENDPOINTS
-# ============================================================================
+import routers
 
-def session_belongs_to_user(session_id: str, user_id: str) -> bool:
-    db = sqlite3.connect(get_db_path())
-    c = db.cursor()
-    c.execute("SELECT 1 FROM sessions WHERE session_id = ? AND user_id = ?", (session_id, user_id))
-    row = c.fetchone()
-    db.close()
-    return row is not None
+router = FastAPI()
 
-
-@app.get("/auth/google")
-def auth_google():
-    url = (
-        "https://accounts.google.com/o/oauth2/v2/auth"
-        "?response_type=code"
-        f"&client_id={CLIENT_ID}"
-        f"&redirect_uri={REDIRECT_URI}"
-        "&scope=openid%20email%20profile"
-        "&access_type=offline"
-        "&prompt=consent"
-    )
-
-    return RedirectResponse(url)
-
-@app.get("/auth/callback")
-def auth_callback(code: str):
-    token_url = "https://oauth2.googleapis.com/token"
-    data = {
-        "code": code, 
-        "client_id": CLIENT_ID, 
-        "client_secret": CLIENT_SECRET, 
-        "redirect_uri": REDIRECT_URI, 
-        "grant_type": "authorization_code"
-    }
-
-    token_res = requests.post(token_url, data=data).json()
-
-    if "id_token" not in token_res: 
-        raise HTTPException(status_code=400, detail="Invalid token exchange")
-    
-    #verifying Google ID token 
-    try: 
-        idinfo = id_token.verify_oauth2_token(
-            token_res["id_token"], 
-            google_requests.Request(), 
-            CLIENT_ID
-        )
-    except Exception: 
-        raise HTTPException(400, "Invalid ID token")
-    
-    google_sub = idinfo["sub"]
-    email = idinfo.get("email")
-    name = idinfo.get("name")
-    picture = idinfo.get("picture")
-
-    db = sqlite3.connect(get_db_path())
-    c = db.cursor()
-
-    c.execute("SELECT id FROM users WHERE id = ?", (google_sub, ))
-    user = c.fetchone()
-
-    if not user: 
-        c.execute(
-            "INSERT INTO users (id, email, name, picture) VALUES (?, ?, ?, ?)", 
-            (google_sub, email, name, picture)
-        )
-
-        db.commit()
-    
-    db.close()
-
-    #store user_id in session cookie 
-    response = RedirectResponse(url="http://localhost:5173")
-    response.set_cookie("user_id", google_sub, httponly=True)
-
-    return response
-
-
-@app.get("/auth/me")
-def auth_me(request: Request):
-    uid = request.cookies.get("user_id")
-
-    if not uid: 
-        return JSONResponse({"authenticated": False})
-    
-    db = sqlite3.connect(get_db_path())
-    c = db.cursor()
-
-    c.execute("SELECT id, email, name, picture FROM users WHERE id = ?", (uid,))
-    user = c.fetchone()
-
-    if not user: 
-        return JSONResponse({"authenticated": False})
-    
-    return{
-        "authenticated": True, 
-        "id": user[0], 
-        "email": user[1], 
-        "name": user[2], 
-        "picture": user[3],
-    }
-
-@app.post("/auth/logout")
-def logout_user(response: Response):
-    response.delete_cookie("user_id")
-    return {"success": True}
-
-
-def require_user(request: Request) -> str:
-    uid = request.cookies.get("user_id")
-    if not uid: 
-        raise HTTPException(401, "Not authenticated")
-    return uid
-
-@app.post("/session/create")
-def create_or_get_session(request: SessionRequest, request_obj: Request):
-    """Create a new session or retrieve existing session info"""
-    user_id = require_user(request_obj)
-    session_id = request.session_id or str(uuid.uuid4())
-
-    create_session(
-        session_id=session_id,
-        user_id=user_id,
-        project_context=request.project_context or "",
-        domain=request.domain or "",
-    )
-
-    return {
-        "session_id": session_id,
-        "context": get_session_context(session_id),
-        "message": "Session created/retrieved successfully",
-    }
-
-
-@app.post("/session/update")
-def update_session(request_data: SessionRequest, request: Request):
-    """Update session context as conversation progresses"""
-    user_id = require_user(request)
-
-    if not request.session_id:
-        raise HTTPException(status_code=400, detail="session_id is required")
-    
-    if not session_belongs_to_user(request_data.session_id, user_id):
-        raise HTTPException(403, "Forbidden")
-
-    update_session_context(
-        session_id=request_data.session_id,
-        project_context=request_data.project_context,
-        domain=request_data.domain,
-    )
-
-    return {"message": "Session updated", "session_id": request_data.session_id}
-
-
-@app.get("/session/{session_id}/title")
-def get_session_title_endpoint(session_id: str, request:Request):
-    """Get session title"""
-    user_id = require_user(request)
-    if not session_belongs_to_user(session_id, user_id):
-        raise HTTPException(403, "Forbidden")
-
-    title = get_session_title(session_id)
-    if title is None:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    return {"session_id": session_id, "session_title": title}
-
-
-@app.get("/session/{session_id}/history")
-def get_session_history(request: Request, session_id: str, limit: int = 10):
-    """Get conversation history for a session"""
-    user_id = require_user(request)
-    if not session_belongs_to_user(session_id, user_id):
-        raise HTTPException(403, "Forbidden")
-
-    history = get_conversation_history(session_id, limit)
-    context = get_session_context(session_id)
-    use_cases = get_session_use_cases(session_id)
-    summary = get_latest_summary(session_id)
-
-    return {
-        "session_id": session_id,
-        "conversation_history": history,
-        "session_context": context,
-        "generated_use_cases": use_cases,
-        "summary": summary,
-    }
-
-
-@app.post("/parse_use_case_rag/")
-def parse_use_case_fast(request: InputText, request_data: Request):
-    """
-    SMART EXTRACTION with intelligent use case estimation
-    - Auto-detects number of use cases in text
-    - Adapts token budget dynamically
-    - No more hardcoded max_use_cases = 8!
-    - Handles any size: tiny to very large
-    """
-
-    session_id = request.session_id or str(uuid.uuid4())
-    user_id = require_user(request_data)
-
-    # Smart session handling
-    existing_context = get_session_context(session_id)
-
-    if existing_context is None:
-        # Generate a title for new session using LLM
-        session_title = generate_session_title(request.raw_text, use_llm=True)
-
-        # Session doesn't exist - create it with provided context and title
-        create_session(
-            session_id=session_id,
-            user_id=user_id,
-            project_context=request.project_context or "",
-            domain=request.domain or "",
-            session_title=session_title,
-        )
-        print(f"✅ Created new session: {session_id} with title: {session_title}")
-    else:
-        # Session exists - only update context if NEW values are provided
-        # Don't update the session title if it already exists (prevents overwriting file upload titles)
-        update_needed = False
-
-        if request.project_context and request.project_context != existing_context.get(
-            "project_context"
-        ):
-            update_needed = True
-
-        if request.domain and request.domain != existing_context.get("domain"):
-            update_needed = True
-
-        if update_needed:
-            update_session_context(
-                session_id=session_id,
-                project_context=request.project_context or None,
-                domain=request.domain or None,
-                # Don't update session_title here to preserve file upload titles
-            )
-            print(f"✅ Updated existing session context: {session_id}")
-        else:
-            print(f"✅ Using existing session: {session_id}")
-            print(f"   Project: {existing_context.get('project_context') or 'Not set'}")
-            print(f"   Domain: {existing_context.get('domain') or 'Not set'}")
-
-    # Store user input in conversation history
-    add_conversation_message(
-        session_id=session_id,
-        role="user",
-        content=request.raw_text,
-        metadata={"type": "requirement_input"},
-    )
-    
-    print(f"💬 User message stored in session: {session_id}")
-
-    # Check text size and decide processing strategy
-    stats = get_text_stats(request.raw_text)
-
-    print(f"\n{'='*80}")
-    print(f"⚡ TEXT INPUT ANALYSIS")
-    print(f"{'='*80}")
-    print(f"📄 Input: {stats['characters']:,} characters")
-    print(f"📊 Words: {stats['words']:,}")
-    print(f"📈 Estimated tokens: {int(stats['estimated_tokens']):,}")
-    print(f"📏 Size category: {stats['size_category']}")
-    print(f"💼 Project: {request.project_context or 'Not specified'}")
-    print(f"🏢 Domain: {request.domain or 'Not specified'}")
-    print(f"{'='*80}\n")
-
-    # Decide processing strategy
-    if stats["size_category"] in ["tiny", "small", "medium"]:
-        # Small/medium text - process directly with smart estimation
-        print(f"✅ Using direct processing (text is {stats['size_category']})\n")
-
-        # Get memory context
-        conversation_history = get_conversation_history(session_id, limit=10)
-        session_context = get_session_context(session_id) or {}
-        previous_use_cases = get_session_use_cases(session_id)
-
-        memory_context = build_memory_context(
-            conversation_history=conversation_history,
-            session_context=session_context,
-            previous_use_cases=previous_use_cases,
-        )
-
-        start_time = time.time()
-
-        # Get text stats and estimate
-        max_use_cases_estimate = get_smart_max_use_cases(request.raw_text)
-
-        # Choose extraction strategy based on size
-        if stats["estimated_tokens"] > 300 and max_use_cases_estimate >= 4:
-            print(
-                f"📦 Using BATCH extraction (better for {max_use_cases_estimate} use cases)\n"
-            )
-            use_cases_raw = extract_use_cases_batch(
-                request.raw_text, memory_context, max_use_cases_estimate
-            )
-        else:
-            print(f"⚡ Using SINGLE-STAGE extraction (small input)\n")
-            use_cases_raw = extract_use_cases_single_stage(
-                request.raw_text, memory_context
-            )
-
-        if not use_cases_raw:
-            return {
-                "message": "No use cases could be extracted",
-                "session_id": session_id,
-                "results": [],
-                "validation_results": [],
-            }
-
-        # Validate and store
-        all_use_cases = []
-        validation_results = []
-
-        for uc_dict in use_cases_raw:
-            try:
-                # Validate
-                is_valid, issues = UseCaseValidator.validate(uc_dict)
-                quality_score = UseCaseValidator.calculate_quality_score(uc_dict)
-
-                # Flatten
-                flat = flatten_use_case(uc_dict)
-                all_use_cases.append(UseCaseSchema(**flat))
-
-                validation_results.append(
-                    {
-                        "title": flat["title"],
-                        "status": "valid" if is_valid else "valid_with_warnings",
-                        "issues": issues,
-                        "quality_score": quality_score,
-                    }
-                )
-
-            except Exception as e:
-                print(
-                    f"⚠️  Validation error for '{uc_dict.get('title', 'Unknown')}': {e}"
-                )
-                validation_results.append(
-                    {
-                        "title": uc_dict.get("title", "Unknown"),
-                        "status": "error",
-                        "reason": str(e),
-                    }
-                )
-
-        # Check for duplicates
-        db_path = get_db_path()
-        conn = sqlite3.connect(db_path)
-        c = conn.cursor()
-        c.execute(
-            "SELECT title, main_flow FROM use_cases WHERE session_id = ?", (session_id,)
-        )
-        existing_rows = c.fetchall()
-        conn.close()
-
-        existing_texts = [
-            f"{row[0]} {' '.join(json.loads(row[1]))}"
-            for row in existing_rows
-            if row[1]
-        ]
-        existing_embeddings = (
-            embedder.encode(existing_texts, convert_to_tensor=True)
-            if existing_texts
-            else None
-        )
-
-        results = []
-        stored_count = 0
-        threshold = 0.85
-
-        for uc in all_use_cases:
-            uc_emb = compute_usecase_embedding(uc)
-            is_duplicate = False
-            if existing_embeddings is not None:
-                cos_sim = util.cos_sim(uc_emb, existing_embeddings)
-                max_sim = float(torch.max(cos_sim))
-                if max_sim >= threshold:
-                    is_duplicate = True
-                    print(f"🔄 Duplicate detected ({max_sim:.2f}): {uc.title[:50]}")
-
-            if not is_duplicate:
-                conn = sqlite3.connect(db_path)
-                c = conn.cursor()
-                c.execute(
-                    """
-            INSERT INTO use_cases 
-            (session_id, title, preconditions, main_flow, sub_flows, alternate_flows, outcomes, stakeholders)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-                    (
-                        session_id,
-                        uc.title,
-                        json.dumps(uc.preconditions),
-                        json.dumps(uc.main_flow),
-                        json.dumps(uc.sub_flows),
-                        json.dumps(uc.alternate_flows),
-                        json.dumps(uc.outcomes),
-                        json.dumps(uc.stakeholders),
-                    ),
-                )
-
-                # Get the inserted ID
-                use_case_id = c.lastrowid
-                conn.commit()
-                conn.close()
-
-                # NEW CODE - Return FULL use case details
-                results.append(
-                    {
-                        "status": "stored",
-                        "id": use_case_id,
-                        "title": uc.title,
-                        "preconditions": uc.preconditions,
-                        "main_flow": uc.main_flow,
-                        "sub_flows": uc.sub_flows,
-                        "alternate_flows": uc.alternate_flows,
-                        "outcomes": uc.outcomes,
-                        "stakeholders": uc.stakeholders,
-                    }
-                )
-                stored_count += 1
-                print(f"💾 Stored: {uc.title}")
-            else:
-                # NEW CODE - Return full details even for duplicates
-                results.append(
-                    {
-                        "status": "duplicate_skipped",
-                        "title": uc.title,
-                        "preconditions": uc.preconditions,
-                        "main_flow": uc.main_flow,
-                        "sub_flows": uc.sub_flows,
-                        "alternate_flows": uc.alternate_flows,
-                        "outcomes": uc.outcomes,
-                        "stakeholders": uc.stakeholders,
-                    }
-                )
-
-        total_time = time.time() - start_time
-
-        # Determine extraction method used
-        extraction_method = (
-            "batch_extraction" if max_use_cases_estimate >= 4 else "single_stage"
-        )
-
-        # Store response
-        add_conversation_message(
-            session_id=session_id,
-            role="assistant",
-            content=f"Smart extraction: {len(use_cases_raw)} use cases in {total_time:.1f}s",
-            metadata={
-                "use_cases": results,
-                "validation_results": validation_results,
-                "extraction_method": extraction_method,
-                "processing_time": total_time,
-            },
-        )
-
-        print(f"\n{'='*80}")
-        print(f"✅ SMART EXTRACTION COMPLETE")
-        print(f"{'='*80}")
-        print(f"📊 Total extracted: {len(use_cases_raw)}")
-        print(f"💾 Stored (new): {stored_count}")
-        print(f"🔄 Duplicates skipped: {len(use_cases_raw) - stored_count}")
-        print(f"⏱️  Total time: {total_time:.1f}s")
-        if use_cases_raw:
-            print(f"⚡ Speed: {total_time/len(use_cases_raw):.1f}s per use case")
-        print(f"{'='*80}\n")
-
-        return {
-            "message": f"Smart extraction: {len(use_cases_raw)} use cases in {total_time:.1f}s",
-            "session_id": session_id,
-            "extracted_count": len(use_cases_raw),
-            "stored_count": stored_count,
-            "duplicate_count": len(use_cases_raw) - stored_count,
-            "processing_time_seconds": round(total_time, 1),
-            "speed_per_use_case": round(
-                total_time / len(use_cases_raw) if use_cases_raw else 0, 1
-            ),
-            "results": results,
-            "validation_results": validation_results,
-            "extraction_method": extraction_method,
-        }
-
-    else:
-        # Large text - use chunked processing
-        print(f"⚠️  Using chunked processing (text is {stats['size_category']})\n")
-
-        return parse_large_document_chunked(
-            text=request.raw_text,
-            session_id=session_id,
-            project_context=request.project_context,
-            domain=request.domain,
-            filename="text_input",
-        )
-
-
-@app.post("/parse_use_case_document/")
-async def parse_use_case_from_document(
-    request: Request,
-    file: UploadFile = File(...),
-    session_id: Optional[str] = Form(None),
-    project_context: Optional[str] = Form(None),
-    domain: Optional[str] = Form(None),
-):
-    """
-    Extract use cases from uploaded document (PDF, DOCX, TXT, MD)
-    Handles documents of any size with intelligent chunking and smart estimation
-    """
-
-    print(f"\n{'='*80}")
-    print(f"📁 DOCUMENT UPLOAD")
-    print(f"{'='*80}")
-    print(f"Filename: {file.filename}")
-    print(f"Content-Type: {file.content_type}")
-    print(f"📋 Received Parameters:")
-    print(f"   session_id: {repr(session_id)}")
-    print(f"   project_context: {repr(project_context)}")
-    print(f"   domain: {repr(domain)}")
-
-    # Validate file size (10MB max)
-    validate_file_size(file, max_size_mb=10)
-
-    # Extract text from document
-    try:
-        extracted_text, file_type = extract_text_from_file(file)
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to extract text: {str(e)}")
-
-    # Get text statistics
-    stats = get_text_stats(extracted_text)
-
-    print(f"\n📊 EXTRACTED TEXT STATS:")
-    print(f"   Characters: {stats['characters']:,}")
-    print(f"   Words: {stats['words']:,}")
-    print(f"   Lines: {stats['lines']:,}")
-    print(f"   Estimated tokens: {int(stats['estimated_tokens']):,}")
-    print(f"   Size category: {stats['size_category']}")
-
-    # Create/get session - ENHANCED with better debugging
-    if session_id is None:
-        session_id = str(uuid.uuid4())
-        print(f"\n🆕 Generated new session_id: {session_id} (no session provided)")
-    else:
-        print(f"\n🔑 Using provided session_id: {session_id}")
-
-    # Check if session exists
-    existing_context = get_session_context(session_id)
-    print(f"📋 Session check for {session_id}: {'EXISTS' if existing_context else 'NEW'}")
-    
-    if existing_context is None:
-        # Generate session title from extracted content (not just filename)
-        session_title = generate_session_title(extracted_text, use_llm=True)
-        
-        create_session(
-            session_id=session_id,
-            user_id=require_user(request),
-            project_context=project_context or "",
-            domain=domain or "",
-            session_title=session_title,
-        )
-        print(f"✅ Created new session for file upload: {session_id} with title: {session_title}")
-    else:
-        # EXISTING SESSION: Don't overwrite the session title or context  
-        print(f"✅ Using existing session for file upload: {session_id}")
-        print(f"   Existing title: {existing_context.get('session_title', 'N/A')}")
-        print(f"   Project: {existing_context.get('project_context') or 'Not set'}")
-        print(f"   Domain: {existing_context.get('domain') or 'Not set'}")
-        print(f"   File: {file.filename}")
-       
-        # Only update if new values provided
-        if project_context or domain:
-            update_session_context(
-                session_id=session_id,
-                project_context=project_context,
-                domain=domain,
-                # CRITICAL: Don't update session_title here
-            )
-            print(f"✅ Updated session context (preserved existing title)")
-
-    # Store document upload in conversation history
-    add_conversation_message(
-        session_id=session_id,
-        role="user",
-        content=f"Uploaded document: {file.filename}",
-        metadata={
-            "type": "document_upload",
-            "filename": file.filename,
-            "file_type": file_type,
-            "stats": stats,
-        },
-    )
-
-    # Process based on document size
-    if stats["size_category"] in ["tiny", "small", "medium"]:
-        # Small document - process directly with smart estimation
-        print(
-            f"\n✅ Document is {stats['size_category']} - processing directly with smart estimation\n"
-        )
-
-        # Use existing parsing logic
-        request_data = InputText(
-            raw_text=extracted_text,
-            session_id=session_id,
-            project_context=project_context,
-            domain=domain,
-        )
-
-        return parse_use_case_fast(request_data)
-
-    else:
-        # Large document - use chunking with smart estimation per chunk
-        print(
-            f"\n⚠️  Document is {stats['size_category']} - using chunked processing with smart estimation\n"
-        )
-
-        return parse_large_document_chunked(
-            text=extracted_text,
-            session_id=session_id,
-            project_context=project_context,
-            domain=domain,
-            filename=file.filename,
-        )
-
-
-@app.post("/use-case/refine")
-def refine_use_case_endpoint(request: RefinementRequest):
-    """Refine a specific use case based on user request"""
-
-    use_case = get_use_case_by_id(request.use_case_id)
-    if not use_case:
-        raise HTTPException(status_code=404, detail="Use case not found")
-
-    # Build refinement prompt based on type
-    if request.refinement_type == "more_main_flows":
-        instruction = "Add more main flows (additional primary flows or steps) to this use case. Expand the main flow with more detailed or additional steps."
-    elif request.refinement_type == "more_sub_flows":
-        instruction = "Add more sub flows to this use case. Include additional branching scenarios, related flows, or secondary paths."
-    elif request.refinement_type == "more_alternate_flows":
-        instruction = "Add more alternate flows to this use case. Include alternative paths, edge cases, error scenarios, and exception handling flows."
-    elif request.refinement_type == "more_preconditions":
-        instruction = "Add more preconditions to this use case. Include additional requirements, system states, or conditions that must be met before the use case can execute."
-    elif request.refinement_type == "more_stakeholders":
-        instruction = "Add more stakeholders to this use case. Identify additional actors, users, systems, or entities involved in this use case."
-    else:
-        instruction = "Improve the overall quality and completeness of this use case."
-
-    prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-
-You are a requirements analyst refining a use case.
-
-<|eot_id|><|start_header_id|>user<|end_header_id|>
-
-Current use case:
-{json.dumps(use_case, indent=2)}
-
-Task: {instruction}
-
-Return the refined use case in the same JSON format, with improvements applied.
-
-<|eot_id|><|start_header_id|>assistant<|end_header_id|>
-
-{{"""
-
-    try:
-        outputs = pipe(
-            prompt,
-            max_new_tokens=800,
-            temperature=0.4,
-            top_p=0.9,
-            do_sample=True,
-            return_full_text=False,
-        )
-
-        response = outputs[0]["generated_text"].strip()
-
-        # Extract JSON
-        if not response.startswith("{"):
-            response = "{" + response
-
-        start = response.find("{")
-        end = response.rfind("}")
-
-        if start != -1 and end != -1:
-            json_str = response[start : end + 1]
-            json_str = re.sub(r",(\s*[}\]])", r"\1", json_str)
-            refined = json.loads(json_str)
-
-            # Update in database
-            update_use_case(request.use_case_id, refined)
-
-            return {
-                "message": "Use case refined successfully",
-                "refined_use_case": refined,
-            }
-        else:
-            raise ValueError("Could not extract valid JSON from refinement")
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Refinement failed: {str(e)}")
-
-
-@app.post("/query")
-def query_requirements(request: QueryRequest, request_data: Request):
-    """Answer natural language questions about requirements"""
-
-    user_id = require_user(request_data)
-    session_id = request.session_id
-
-    if not session_belongs_to_user(session_id, user_id):
-        raise HTTPException(403, "Forbidden")
-
-
-    use_cases = get_session_use_cases(request.session_id)
-
-    if not use_cases:
-        return {
-            "answer": "No use cases found for this session yet.",
-            "relevant_use_cases": [],
-        }
-
-    # Remove database IDs from use cases before sending to LLM
-    # This prevents use case numbers from appearing in explanations
-    use_cases_for_context = []
-    for uc in use_cases:
-        use_case_without_id = {
-            "title": uc.get("title", ""),
-            "preconditions": uc.get("preconditions", []),
-            "main_flow": uc.get("main_flow", []),
-            "sub_flows": uc.get("sub_flows", []),
-            "alternate_flows": uc.get("alternate_flows", []),
-            "outcomes": uc.get("outcomes", []),
-            "stakeholders": uc.get("stakeholders", []),
-        }
-        use_cases_for_context.append(use_case_without_id)
-
-    context = json.dumps(use_cases_for_context, indent=2)
-
-    prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-
-You are a requirements analyst assistant. Answer questions about use cases clearly and concisely.
-IMPORTANT: Do NOT mention use case IDs, numbers, or database identifiers in your responses. Only refer to use cases by their titles.
-
-<|eot_id|><|start_header_id|>user<|end_header_id|>
-
-Use cases:
-{context}
-
-Question: {request.question}
-
-Provide a clear, helpful answer based on the use cases above. Do not include any use case numbers or IDs in your response.
-
-<|eot_id|><|start_header_id|>assistant<|end_header_id|>
-
-"""
-
-    try:
-        outputs = pipe(
-            prompt,
-            max_new_tokens=400,
-            temperature=0.5,
-            top_p=0.9,
-            do_sample=True,
-            return_full_text=False,
-        )
-
-        answer = outputs[0]["generated_text"].strip()
-
-        # Post-process to remove any use case numbers that might have slipped through
-        # Remove patterns like "Use Case 249", "Use Case 248", "UC 253", etc.
-        answer = re.sub(r"\(Use Case\s+\d+\)", "", answer, flags=re.IGNORECASE)
-        answer = re.sub(
-            r"\(Use Cases\s+\d+[,\s]*\d*\)", "", answer, flags=re.IGNORECASE
-        )
-        answer = re.sub(r"Use Case\s+\d+", "", answer, flags=re.IGNORECASE)
-        answer = re.sub(r"UC\s+\d+", "", answer, flags=re.IGNORECASE)
-        # Clean up any double spaces or trailing commas/spaces
-        answer = re.sub(r"\s+", " ", answer)
-        answer = re.sub(r"\s*,\s*,", ",", answer)
-        answer = re.sub(r"\s*,\s*\.", ".", answer)
-        answer = answer.strip()
-
-        # Find relevant use cases
-        question_lower = request.question.lower()
-        relevant = []
-
-        for uc in use_cases:
-            if any(word in uc["title"].lower() for word in question_lower.split()):
-                relevant.append(uc["title"])
-
-        return {
-            "answer": answer,
-            "relevant_use_cases": relevant,
-            "total_use_cases": len(use_cases),
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
-
-
-@app.get("/session/{session_id}/export/docx")
-def export_docx_endpoint(session_id: str, request: Request):
-    """Export use cases to Word document"""
-
-    user_id = require_user(request)
-    if not session_belongs_to_user(session_id, user_id):
-        raise HTTPException(403, "Forbidden")
-
-
-    use_cases = get_session_use_cases(session_id)
-    session_context = get_session_context(session_id)
-
-    if not use_cases:
-        raise HTTPException(
-            status_code=404, detail="No use cases found for this session"
-        )
-
-    try:
-        file_path = export_to_docx(use_cases, session_context, session_id)
-        return FileResponse(
-            file_path,
-            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            filename=f"use_cases_{session_id}.docx",
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
-
-
-@app.get("/session/{session_id}/export/markdown")
-def export_markdown_endpoint(session_id: str, request:Request):
-    """Export as Markdown document"""
-
-    user_id = require_user(request)
-    if not session_belongs_to_user(session_id, user_id):
-        raise HTTPException(403, "Forbidden")
-
-
-    use_cases = get_session_use_cases(session_id)
-    session_context = get_session_context(session_id)
-
-    if not use_cases:
-        raise HTTPException(
-            status_code=404, detail="No use cases found for this session"
-        )
-
-    try:
-        file_path = export_to_markdown(use_cases, session_context, session_id)
-        return FileResponse(
-            file_path, media_type="text/markdown", filename=f"use_cases_{session_id}.md"
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
-
-
-@app.delete("/session/{session_id}")
-def clear_session(session_id: str, request:Request):
-    """Clear all data for a specific session"""
-    user_id = require_user(request)
-    if not session_belongs_to_user(session_id, user_id):
-        raise HTTPException(403, "Forbidden")
-
-
-    db_path = get_db_path()
-    conn = sqlite3.connect(db_path)
-    c = conn.cursor()
-
-    # Delete session data
-    c.execute("DELETE FROM conversation_history WHERE session_id = ?", (session_id,))
-    c.execute("DELETE FROM use_cases WHERE session_id = ?", (session_id,))
-    c.execute("DELETE FROM session_summaries WHERE session_id = ?", (session_id,))
-    c.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
-
-    conn.commit()
-    conn.close()
-
-    return {"message": f"Session {session_id} cleared successfully"}
-
+router.include_router(routers.router)
 
 def generate_session_title(
     first_user_message: str, max_length: int = 50, use_llm: bool = False
@@ -2447,69 +1531,180 @@ def generate_fallback_title(text: str, max_length: int = 50) -> str:
     return "Requirements Session"
 
 
-# Update the list_sessions endpoint to use improved title generation
-@app.get("/sessions/")
-def list_sessions(request: Request):
-    """List all active sessions with stored titles"""
-    user_id = require_user(request)
-    
-    db_path = get_db_path()
-    conn = sqlite3.connect(db_path)
-    c = conn.cursor()
+@app.post("/use-case/refine")
+def refine_use_case_endpoint(request: RefinementRequest):
+    """Refine a specific use case based on user request"""
 
+    use_case = get_use_case_by_id(request.use_case_id)
+    if not use_case:
+        raise HTTPException(status_code=404, detail="Use case not found")
 
-    c.execute(
-        """
-        SELECT session_id, project_context, domain, session_title, created_at, last_active
-        FROM sessions
-        WHERE user_id = ?
-        ORDER BY last_active DESC
-    """, (user_id,)
-    )
+    # Build refinement prompt based on type
+    if request.refinement_type == "more_main_flows":
+        instruction = "Add more main flows (additional primary flows or steps) to this use case. Expand the main flow with more detailed or additional steps."
+    elif request.refinement_type == "more_sub_flows":
+        instruction = "Add more sub flows to this use case. Include additional branching scenarios, related flows, or secondary paths."
+    elif request.refinement_type == "more_alternate_flows":
+        instruction = "Add more alternate flows to this use case. Include alternative paths, edge cases, error scenarios, and exception handling flows."
+    elif request.refinement_type == "more_preconditions":
+        instruction = "Add more preconditions to this use case. Include additional requirements, system states, or conditions that must be met before the use case can execute."
+    elif request.refinement_type == "more_stakeholders":
+        instruction = "Add more stakeholders to this use case. Identify additional actors, users, systems, or entities involved in this use case."
+    else:
+        instruction = "Improve the overall quality and completeness of this use case."
 
-    rows = c.fetchall()
-    conn.close()
+    prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
-    # Return sessions with stored titles
-    sessions= []
-    for row in rows:
-        sessions.append(
-            {
-                "session_id": row[0],
-                "session_title": row[3] or "New Session",
-                "project_context": row[1] or "",
-                "domain": row[2] or "",
-                "created_at": row[4],
-                "last_active": row[5],
-            }
+You are a requirements analyst refining a use case.
+
+<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+Current use case:
+{json.dumps(use_case, indent=2)}
+
+Task: {instruction}
+
+Return the refined use case in the same JSON format, with improvements applied.
+
+<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+{{"""
+
+    try:
+        outputs = pipe(
+            prompt,
+            max_new_tokens=800,
+            temperature=0.4,
+            top_p=0.9,
+            do_sample=True,
+            return_full_text=False,
         )
 
-    return {"sessions": sessions}
+        response = outputs[0]["generated_text"].strip()
 
+        # Extract JSON
+        if not response.startswith("{"):
+            response = "{" + response
 
-@app.get("/session/{session_id}/export")
-def export_session(session_id: str, request: Request):
-    """Export all session data for backup or analysis"""
-    user_id = require_user(request)
+        start = response.find("{")
+        end = response.rfind("}")
+
+        if start != -1 and end != -1:
+            json_str = response[start : end + 1]
+            json_str = re.sub(r",(\s*[}\]])", r"\1", json_str)
+            refined = json.loads(json_str)
+
+            # Update in database
+            update_use_case(request.use_case_id, refined)
+
+            return {
+                "message": "Use case refined successfully",
+                "refined_use_case": refined,
+            }
+        else:
+            raise ValueError("Could not extract valid JSON from refinement")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Refinement failed: {str(e)}")
+
+@app.post("/query")
+def query_requirements(request: QueryRequest, request_data: Request):
+    """Answer natural language questions about requirements"""
+
+    user_id = require_user(request_data)
+    session_id = request.session_id
+
     if not session_belongs_to_user(session_id, user_id):
         raise HTTPException(403, "Forbidden")
 
-    conversation = get_conversation_history(session_id, limit=1000)
-    context = get_session_context(session_id)
-    use_cases = get_session_use_cases(session_id)
-    summary = get_latest_summary(session_id)
 
-    return {
-        "session_id": session_id,
-        "exported_at": str(datetime.now()),
-        "session_context": context,
-        "conversation_history": conversation,
-        "use_cases": use_cases,
-        "latest_summary": summary,
-    }
+    use_cases = get_session_use_cases(request.session_id)
 
+    if not use_cases:
+        return {
+            "answer": "No use cases found for this session yet.",
+            "relevant_use_cases": [],
+        }
 
-@app.get("/health")
+    # Remove database IDs from use cases before sending to LLM
+    # This prevents use case numbers from appearing in explanations
+    use_cases_for_context = []
+    for uc in use_cases:
+        use_case_without_id = {
+            "title": uc.get("title", ""),
+            "preconditions": uc.get("preconditions", []),
+            "main_flow": uc.get("main_flow", []),
+            "sub_flows": uc.get("sub_flows", []),
+            "alternate_flows": uc.get("alternate_flows", []),
+            "outcomes": uc.get("outcomes", []),
+            "stakeholders": uc.get("stakeholders", []),
+        }
+        use_cases_for_context.append(use_case_without_id)
+
+    context = json.dumps(use_cases_for_context, indent=2)
+
+    prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+You are a requirements analyst assistant. Answer questions about use cases clearly and concisely.
+IMPORTANT: Do NOT mention use case IDs, numbers, or database identifiers in your responses. Only refer to use cases by their titles.
+
+<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+Use cases:
+{context}
+
+Question: {request.question}
+
+Provide a clear, helpful answer based on the use cases above. Do not include any use case numbers or IDs in your response.
+
+<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+"""
+
+    try:
+        outputs = pipe(
+            prompt,
+            max_new_tokens=400,
+            temperature=0.5,
+            top_p=0.9,
+            do_sample=True,
+            return_full_text=False,
+        )
+
+        answer = outputs[0]["generated_text"].strip()
+
+        # Post-process to remove any use case numbers that might have slipped through
+        # Remove patterns like "Use Case 249", "Use Case 248", "UC 253", etc.
+        answer = re.sub(r"\(Use Case\s+\d+\)", "", answer, flags=re.IGNORECASE)
+        answer = re.sub(
+            r"\(Use Cases\s+\d+[,\s]*\d*\)", "", answer, flags=re.IGNORECASE
+        )
+        answer = re.sub(r"Use Case\s+\d+", "", answer, flags=re.IGNORECASE)
+        answer = re.sub(r"UC\s+\d+", "", answer, flags=re.IGNORECASE)
+        # Clean up any double spaces or trailing commas/spaces
+        answer = re.sub(r"\s+", " ", answer)
+        answer = re.sub(r"\s*,\s*,", ",", answer)
+        answer = re.sub(r"\s*,\s*\.", ".", answer)
+        answer = answer.strip()
+
+        # Find relevant use cases
+        question_lower = request.question.lower()
+        relevant = []
+
+        for uc in use_cases:
+            if any(word in uc["title"].lower() for word in question_lower.split()):
+                relevant.append(uc["title"])
+
+        return {
+            "answer": answer,
+            "relevant_use_cases": relevant,
+            "total_use_cases": len(use_cases),
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
+
+@router.get("/health")
 def health_check():
     """Health check endpoint with system info"""
     return {
@@ -2558,8 +1753,7 @@ def health_check():
         },
     }
 
-
-@app.get("/")
+@router.get("/")
 def root():
     """Root endpoint with API information"""
     return {
