@@ -1,7 +1,8 @@
 import re
 from typing import Tuple
 from key_values import ACTION_VERBS, ACTORS
-
+from backend.database.models import UseCaseSchema
+import main
 class UseCaseEstimator:
     """Intelligently estimate number of use cases in requirements text"""
 
@@ -161,7 +162,6 @@ class UseCaseEstimator:
 
         return min_estimate, max_estimate, details
 
-
 def get_smart_max_use_cases(text: str) -> int:
     """
     Get intelligent estimate for max_use_cases parameter
@@ -251,7 +251,6 @@ def get_smart_max_use_cases(text: str) -> int:
 
     return smart_max
 
-
 def get_smart_token_budget(text: str, estimated_use_cases: int) -> int:
     """Calculate appropriate token budget based on estimated use cases"""
 
@@ -265,3 +264,41 @@ def get_smart_token_budget(text: str, estimated_use_cases: int) -> int:
     )
 
     return token_budget
+
+def flatten_use_case(data: dict) -> dict:
+    """Convert nested use case data to flat structure"""
+    flat = {"title": data.get("title", "Untitled")}
+
+    def ensure_list(value, placeholder=None):
+        if isinstance(value, list):
+            return [str(v) if not isinstance(v, str) else v for v in value] or (
+                [placeholder] if placeholder else []
+            )
+        elif isinstance(value, dict):
+            return [f"{k}: {v}" for k, v in value.items()] or (
+                [placeholder] if placeholder else []
+            )
+        elif value:
+            return [str(value)]
+        return [placeholder] if placeholder else []
+
+    flat["preconditions"] = ensure_list(
+        data.get("preconditions"), "User is authenticated"
+    )
+    flat["main_flow"] = ensure_list(data.get("main_flow"), "Action performed")
+    flat["sub_flows"] = ensure_list(
+        data.get("sub_flows"), "Optional features available"
+    )
+    flat["alternate_flows"] = ensure_list(
+        data.get("alternate_flows"), "Error handling included"
+    )
+    flat["outcomes"] = ensure_list(data.get("outcomes"), "Task completed successfully")
+    flat["stakeholders"] = ensure_list(data.get("stakeholders"), "User")
+
+    return flat
+
+
+def compute_usecase_embedding(use_case: UseCaseSchema):
+    """Combine title and main_flow into embedding vector"""
+    text = use_case.title + " " + " ".join(use_case.main_flow)
+    return main.embedder.encode(text, convert_to_tensor=True)

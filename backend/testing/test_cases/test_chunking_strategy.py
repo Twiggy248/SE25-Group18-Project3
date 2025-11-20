@@ -12,7 +12,7 @@
 
 import pytest
 
-from chunking_strategy import DocumentChunker
+from backend.utilities.chunking_strategy import DocumentChunker
 
 
 def test_init():

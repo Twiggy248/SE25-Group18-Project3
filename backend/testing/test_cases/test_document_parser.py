@@ -14,7 +14,7 @@ from io import BytesIO
 import pytest
 from fastapi import HTTPException, UploadFile
 
-from document_parser import (categorize_text_size, extract_from_text,
+from backend.utilities.document_parser import (categorize_text_size, extract_from_text,
                              extract_text_from_file, get_text_stats,
                              parse_document, validate_file_size)
 
@@ -137,7 +137,7 @@ def test_extract_from_pdf():
         # Create a simple PDF in memory for testing
         from reportlab.pdfgen import canvas
 
-        from document_parser import extract_from_pdf
+        from backend.utilities.document_parser import extract_from_pdf
 
         pdf_buffer = BytesIO()
         c = canvas.Canvas(pdf_buffer)
@@ -163,7 +163,7 @@ def test_extract_from_docx():
     try:
         from docx import Document
 
-        from document_parser import extract_from_docx
+        from backend.utilities.document_parser import extract_from_docx
 
         # Create a simple DOCX in memory
         doc = Document()
@@ -269,7 +269,7 @@ def test_parse_document_large_text():
 
 def test_extract_from_docx_error_handling():
     """Test DOCX extraction error handling"""
-    from document_parser import extract_from_docx
+    from backend.utilities.document_parser import extract_from_docx
     # Invalid DOCX content
     invalid_content = b"Not a DOCX file"
     with pytest.raises(Exception):
@@ -278,7 +278,7 @@ def test_extract_from_docx_error_handling():
 
 def test_extract_from_pdf_empty():
     """Test PDF extraction with empty/invalid content"""
-    from document_parser import extract_from_pdf
+    from backend.utilities.document_parser import extract_from_pdf
     from fastapi import HTTPException
     invalid_content = b"Not a PDF"
     with pytest.raises(HTTPException):

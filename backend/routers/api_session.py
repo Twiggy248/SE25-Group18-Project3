@@ -3,12 +3,12 @@ import sqlite3
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
-from db import (create_session, get_conversation_history, get_latest_summary,
+from backend.database.db import (create_session, get_conversation_history, get_latest_summary,
                 get_session_context, get_session_title, get_session_use_cases, 
                 update_session_context, get_db_path)
 from utilities.exports import export_to_docx, export_to_markdown
-from models import SessionRequest
-from routers import require_user
+from backend.database.models import SessionRequest
+from backend.api.router import require_user
 
 router = APIRouter(
     prefix="/session",

@@ -7,7 +7,7 @@ import pytest_asyncio
 
 pytestmark = pytest.mark.asyncio
 
-from document_parser import parse_document
+from backend.utilities.document_parser import parse_document
 from utilities.exports import export_to_format
 # Import all required modules
 from backend.utilities.rag import extract_use_cases, process_document

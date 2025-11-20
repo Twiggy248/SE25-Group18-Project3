@@ -10,16 +10,20 @@ import torch
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Request
 from sentence_transformers import util
 
-from db import (add_conversation_message, create_session,
+from backend.database.db import (add_conversation_message, create_session,
                 get_conversation_history, get_db_path,
                 get_session_context, get_session_use_cases, update_session_context)
-from document_parser import (extract_text_from_file, get_text_stats,
+from backend.utilities.document_parser import (extract_text_from_file, get_text_stats,
                              validate_file_size)
 from backend.utilities.rag import build_memory_context
 from use_case.use_case_validator import UseCaseValidator
-from models import UseCaseSchema, InputText
-from main import generate_session_title, get_smart_max_use_cases, extract_use_cases_batch, extract_use_cases_single_stage, flatten_use_case, compute_usecase_embedding, parse_large_document_chunked, embedder
-from routers import require_user
+from backend.database.models import UseCaseSchema, InputText
+from backend.api.router import require_user
+import main
+from managers.session_manager import generate_session_title
+from managers.use_case_manager import get_smart_max_use_cases, extract_use_cases_batch, extract_use_cases_single_stage, extract_with_smart_fallback
+from utilities.use_case_utilities import flatten_use_case, compute_usecase_embedding
+from managers.parse_manager import parse_large_document_chunked
 
 router = APIRouter(
     prefix="/parse_use_case_",
@@ -199,7 +203,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
             if row[1]
         ]
         existing_embeddings = (
-            embedder.encode(existing_texts, convert_to_tensor=True)
+            main.embedder.encode(existing_texts, convert_to_tensor=True)
             if existing_texts
             else None
         )

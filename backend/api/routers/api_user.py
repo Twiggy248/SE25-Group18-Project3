@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse 
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
-from db import get_db_path
+from backend.database.db import get_db_path
 
 # --- Google OAuth --- 
 CLIENT_ID = os.getenv("CLIENT_ID")

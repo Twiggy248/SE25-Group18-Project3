@@ -15,7 +15,7 @@ from datetime import datetime
 
 import pytest
 
-from db import (add_conversation_message, add_session_summary, create_session,
+from backend.database.db import (add_conversation_message, add_session_summary, create_session,
                 get_conversation_history, get_latest_summary,
                 get_session_context, get_session_use_cases, get_use_case_by_id,
                 init_db, update_session_context, update_use_case)
@@ -27,7 +27,7 @@ def test_db():
     test_db_path = f"test_requirements_{os.getpid()}.db"
 
     # Override the get_db_path function to use our test database
-    import db
+    import backend.database.db as db
 
     original_get_db_path = db.get_db_path
     db.get_db_path = lambda: test_db_path
@@ -225,7 +225,7 @@ def test_update_nonexistent_use_case(test_db):
 
 def test_migrate_db_session_title(test_db):
     """Test database migration for session_title column"""
-    from db import migrate_db
+    from backend.database.db import migrate_db
 
     conn = sqlite3.connect(test_db)
     c = conn.cursor()
@@ -272,7 +272,7 @@ def test_migrate_db_session_title(test_db):
 
     def test_migrate_db_reset(test_db):
         """Test database reset functionality"""
-        from db import migrate_db
+        from backend.database.db import migrate_db
 
         # Create some test data
         session_id = "test_reset_session"
@@ -322,7 +322,7 @@ def test_update_session_with_title(test_db):
 
 def test_get_session_title(test_db):
     """Test getting session title"""
-    from db import get_session_title
+    from backend.database.db import get_session_title
     
     session_id = "test_get_title"
     title = "My Test Session"
@@ -342,7 +342,7 @@ def test_get_session_title(test_db):
 @pytest.mark.skip(reason="Function signature changed")
 def test_clean_new_session_titles(test_db):
     """Test cleaning 'New Session' titles"""
-    from db import clean_new_session_titles
+    from backend.database.db import clean_new_session_titles
     
     # Create sessions with and without "New Session" title
     create_session("session1", session_title="New Session")
@@ -353,7 +353,7 @@ def test_clean_new_session_titles(test_db):
     clean_new_session_titles()
     
     # Verify "New Session" titles were removed
-    from db import get_session_title
+    from backend.database.db import get_session_title
     title1 = get_session_title("session1")
     title2 = get_session_title("session2")
     title3 = get_session_title("session3")
