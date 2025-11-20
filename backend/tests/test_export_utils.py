@@ -4,9 +4,9 @@ from datetime import datetime
 
 import pytest
 
-from export_utils import (_build_jira_description, _convert_to_jira_issue,
+from utilities.exports import (_build_jira_description, _convert_to_jira_issue,
                           export_to_docx, export_to_format, export_to_json,
-                          export_to_markdown, export_to_plantuml)
+                          export_to_markdown, export_to_plantuml, export_to_html)
 
 
 @pytest.fixture
@@ -255,7 +255,6 @@ def test_export_to_markdown(sample_use_case, sample_session_context):
 
 def test_export_to_docx_without_session_context(sample_use_case):
     """Test DOCX export without session context"""
-    from export_utils import export_to_docx
     use_cases = [sample_use_case]
     result = export_to_docx(use_cases, None, "test_session")
     assert os.path.exists(result)
@@ -264,7 +263,6 @@ def test_export_to_docx_without_session_context(sample_use_case):
 
 def test_export_to_markdown_without_session_context(sample_use_case):
     """Test Markdown export without session context"""
-    from export_utils import export_to_markdown
     use_cases = [sample_use_case]
     result = export_to_markdown(use_cases, None, "test_session")
     assert os.path.exists(result)
@@ -273,7 +271,6 @@ def test_export_to_markdown_without_session_context(sample_use_case):
 
 def test_export_to_docx_with_empty_fields(sample_session_context):
     """Test DOCX export with use case having empty fields"""
-    from export_utils import export_to_docx
     use_case = {
         "id": "UC_EMPTY",
         "title": "Empty Use Case",
@@ -289,7 +286,6 @@ def test_export_to_docx_with_empty_fields(sample_session_context):
 
 def test_export_to_markdown_with_empty_fields(sample_session_context):
     """Test Markdown export with use case having empty fields"""
-    from export_utils import export_to_markdown
     use_case = {
         "id": "UC_EMPTY",
         "title": "Empty Use Case",
@@ -305,7 +301,6 @@ def test_export_to_markdown_with_empty_fields(sample_session_context):
 
 def test_export_to_docx_multiple_use_cases(sample_use_case, sample_session_context):
     """Test DOCX export with multiple use cases"""
-    from export_utils import export_to_docx
     use_case2 = sample_use_case.copy()
     use_case2["id"] = "UC_002"
     use_case2["title"] = "Second Use Case"
@@ -316,7 +311,6 @@ def test_export_to_docx_multiple_use_cases(sample_use_case, sample_session_conte
 
 def test_export_to_markdown_multiple_use_cases(sample_use_case, sample_session_context):
     """Test Markdown export with multiple use cases"""
-    from export_utils import export_to_markdown
     use_case2 = sample_use_case.copy()
     use_case2["id"] = "UC_002"
     use_case2["title"] = "Second Use Case"
@@ -327,7 +321,6 @@ def test_export_to_markdown_multiple_use_cases(sample_use_case, sample_session_c
 
 def test_export_to_html(sample_use_case, sample_session_context):
     """Test HTML export functionality"""
-    from export_utils import export_to_html
     use_cases = [sample_use_case]
     result = export_to_html(use_cases)
     assert isinstance(result, str)

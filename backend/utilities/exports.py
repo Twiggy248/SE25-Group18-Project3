@@ -431,6 +431,28 @@ def export_to_format(use_cases: List[Dict], format_type: str) -> Dict:
     else:
         raise ValueError(f"Unsupported format: {format_type}")
 
+def export_to_json(use_cases: List[Dict], session_context: Optional[Dict]) -> Dict:
+    """
+    Export use cases to structured JSON format
+
+    Args:
+        use_cases: List of use cases
+        session_context: Session metadata
+
+    Returns:
+        Structured JSON object
+    """
+    return {
+        "metadata": {
+            "project_context": (
+                session_context.get("project_context", "") if session_context else ""
+            ),
+            "domain": session_context.get("domain", "") if session_context else "",
+            "generated_at": datetime.now().isoformat(),
+            "total_use_cases": len(use_cases),
+        },
+        "use_cases": use_cases,
+    }
 
 def _convert_to_jira_issue(use_case: Dict) -> Dict:
     """Convert use case to JIRA issue format"""
@@ -462,27 +484,3 @@ def _build_jira_description(use_case: Dict) -> str:
             parts.append(f"* {req}")
 
     return "\n".join(parts)
-
-
-def export_to_json(use_cases: List[Dict], session_context: Optional[Dict]) -> Dict:
-    """
-    Export use cases to structured JSON format
-
-    Args:
-        use_cases: List of use cases
-        session_context: Session metadata
-
-    Returns:
-        Structured JSON object
-    """
-    return {
-        "metadata": {
-            "project_context": (
-                session_context.get("project_context", "") if session_context else ""
-            ),
-            "domain": session_context.get("domain", "") if session_context else "",
-            "generated_at": datetime.now().isoformat(),
-            "total_use_cases": len(use_cases),
-        },
-        "use_cases": use_cases,
-    }

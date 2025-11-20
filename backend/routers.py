@@ -11,3 +11,4 @@ def require_user(request: Request) -> str:
     if not uid: 
         raise HTTPException(401, "Not authenticated")
     return uid
+

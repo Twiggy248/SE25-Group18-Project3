@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# File: rag_utils.py
+# File: rag.py
 # Description: RAG (Retrieval-Augmented Generation) utilities for ReqEngine -
 #              handles vector store operations and semantic search functionality.
 # Author: Pradyumna Chacham

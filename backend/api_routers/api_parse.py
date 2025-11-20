@@ -15,8 +15,8 @@ from db import (add_conversation_message, create_session,
                 get_session_context, get_session_use_cases, update_session_context)
 from document_parser import (extract_text_from_file, get_text_stats,
                              validate_file_size)
-from rag_utils import build_memory_context
-from use_case_validator import UseCaseValidator
+from backend.utilities.rag import build_memory_context
+from use_case.use_case_validator import UseCaseValidator
 from models import UseCaseSchema, InputText
 from main import generate_session_title, get_smart_max_use_cases, extract_use_cases_batch, extract_use_cases_single_stage, flatten_use_case, compute_usecase_embedding, parse_large_document_chunked, embedder
 from routers import require_user

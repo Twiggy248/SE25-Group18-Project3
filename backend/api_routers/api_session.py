@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from db import (create_session, get_conversation_history, get_latest_summary,
                 get_session_context, get_session_title, get_session_use_cases, 
                 update_session_context, get_db_path)
-from export_utils import export_to_docx, export_to_markdown
+from utilities.exports import export_to_docx, export_to_markdown
 from models import SessionRequest
 from routers import require_user
 

@@ -1,3 +1,9 @@
+"""
+Models.py
+Contains the Schemas for the Database Models utilized in the backend
+"""
+
+
 from pydantic import BaseModel
 from typing import List, Optional
 

@@ -4,7 +4,7 @@ Tests validation logic, quality scoring, and improvement suggestions
 """
 
 import pytest
-from use_case_validator import UseCaseValidator, validate_requirements
+from use_case.use_case_validator import UseCaseValidator, validate_requirements
 
 
 @pytest.fixture
