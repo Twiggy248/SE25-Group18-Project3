@@ -44,6 +44,7 @@ def migrate_db(reset: bool = False):
             """
             CREATE TABLE IF NOT EXISTS sessions (
                 session_id TEXT PRIMARY KEY,
+                user_id TEXT,
                 project_context TEXT,
                 domain TEXT,
                 user_preferences TEXT,
@@ -122,6 +123,7 @@ def init_db():
         """
         CREATE TABLE IF NOT EXISTS sessions (
             session_id TEXT PRIMARY KEY,
+            user_id TEXT,
             project_context TEXT,
             domain TEXT,
             user_preferences TEXT,
