@@ -14,24 +14,18 @@ import { toast } from 'react-toastify';
 import useSessionStore from '../store/useSessionStore';
 import FileUploader from '../components/FileUploader';
 import SessionHeader from '../components/layout/SessionHeader';
-import { useTheme, ThemeControls } from '../context/ThemeContext';
+import UseCaseCard from '../components/UseCaseCard';
 
 function Chat() {
   const { currentSessionId, setCurrentSession } = useSessionStore();
-  const { getStakeholderColor } = useTheme();
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(false);
-  const [refiningUseCase, setRefiningUseCase] = useState(null);
-  const [refineType, setRefineType] = useState('more_main_flows');
-  const [refining, setRefining] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Check if there's an active session (messages exist or currentSessionId is set)
   const hasActiveSession = messages.length > 0 || currentSessionId;
 
-  // Normalize backend extraction response for consistent rendering
   const normalizeExtractionResponse = (data) => {
     const resultsArray = Array.isArray(data?.results)
       ? data.results
@@ -83,7 +77,6 @@ function Chat() {
       const history = response.data.conversation_history || [];
       const freshUseCases = response.data.generated_use_cases || [];
       
-      // Update session title in store if available
       const sessionTitle = response.data.session_context?.session_title;
       if (sessionTitle && sessionTitle !== 'New Session') {
         setCurrentSession(currentSessionId, sessionTitle);
@@ -137,7 +130,7 @@ function Chat() {
       
       setMessages(formattedMessages);
     } catch (error) {
-      console.log('Could not load history');
+      console.error('Could not load conversation history:', error);
     }
   };
 
@@ -158,11 +151,6 @@ function Chat() {
     setLoading(true);
 
     try {
-      console.log('💬 Text Input Session Debug:');
-      console.log('   Current Session ID:', currentSessionId || 'None (new session will be created)');
-      console.log('   Input Text Length:', inputText.length);
-      console.log('   Messages in Chat:', messages.length);
-      
       const response = await api.extractFromText({
         raw_text: inputText,
         session_id: currentSessionId || undefined,
@@ -175,7 +163,6 @@ function Chat() {
           const sessionTitle = titleResponse.data.session_title || 'New Session';
           setCurrentSession(normalized.session_id, sessionTitle);
         } catch (error) {
-          console.warn('Could not fetch session title, using default');
           setCurrentSession(normalized.session_id);
         }
       }
@@ -222,29 +209,12 @@ function Chat() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-
-      console.log('📤 File Upload Session Debug:');
-      console.log('   Current Session ID:', currentSessionId || 'None (new session will be created)');
-      console.log('   File Name:', file.name);
-      console.log('   Messages in Chat:', messages.length);
       
       const response = await api.extractFromDocument(formData, {
         session_id: currentSessionId,
       });
-
-      console.log('✅ File upload response received:');
-      console.log('   Response Session ID:', response.data.session_id);
-      console.log('   Expected Session ID:', currentSessionId || 'New session expected');
       
       const normalized = normalizeExtractionResponse(response.data);
-
-      if (currentSessionId && response.data.session_id !== currentSessionId) {
-        console.warn('⚠️ WARNING: Backend returned different session!');
-        console.warn('   Expected:', currentSessionId);
-        console.warn('   Received:', response.data.session_id);
-      } else if (currentSessionId) {
-        console.log('✅ Session maintained:', currentSessionId);
-      }
 
       if (!currentSessionId) {
         try {
@@ -252,19 +222,11 @@ function Chat() {
           const sessionTitle = titleResponse.data.session_title || 
                               file.name.replace(/\.[^/.]+$/, "");
           setCurrentSession(normalized.session_id, sessionTitle);
-          console.log('🆕 New session created from file upload:', normalized.session_id, 'with title:', sessionTitle);
         } catch (error) {
-          console.warn('Could not fetch session title, using filename');
           setCurrentSession(normalized.session_id, file.name.replace(/\.[^/.]+$/, ""));
         }
-      } else {
-        console.log('✅ File uploaded to existing session:', currentSessionId);
-        if (normalized.session_id !== currentSessionId) {
-          console.error('🚨 CRITICAL: Session ID mismatch detected!');
-          console.error('   Frontend session:', currentSessionId);
-          console.error('   Backend returned:', normalized.session_id);
-          setCurrentSession(normalized.session_id);
-        }
+      } else if (normalized.session_id !== currentSessionId) {
+        setCurrentSession(normalized.session_id);
       }
 
       const assistantMessage = {
@@ -297,66 +259,8 @@ function Chat() {
     }
   };
 
-  const handleRefineUseCase = async (useCaseId, refinementType) => {
-    setRefining(true);
-    toast.info('Refining use case...', { autoClose: 2000 });
-    
-    try {
-      const response = await api.refineUseCase({
-        use_case_id: useCaseId,
-        refinement_type: refinementType,
-      });
-
-      const refinedData = response.data.refined_use_case;
-      
-      toast.success('✨ Use case refined successfully! Refreshing...');
-      
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      if (currentSessionId) {
-        await loadConversationHistory();
-      } else {
-        setMessages(prevMessages => {
-          return prevMessages.map(msg => {
-            if (msg.results && Array.isArray(msg.results)) {
-              return {
-                ...msg,
-                results: msg.results.map(uc => {
-                  if (uc.id === useCaseId) {
-                    return {
-                      ...uc,
-                      ...refinedData,
-                      id: useCaseId,
-                      _refined: true,
-                    };
-                  }
-                  return uc;
-                }),
-              };
-            }
-            return msg;
-          });
-        });
-      }
-      
-      setRefiningUseCase(null);
-      setRefineType('more_main_flows');
-      
-      setTimeout(() => {
-        scrollToBottom();
-      }, 100);
-      
-    } catch (error) {
-      console.error('Refinement error:', error);
-      toast.error(error.response?.data?.detail || 'Failed to refine use case. Please try again.');
-    } finally {
-      setRefining(false);
-    }
-  };
-
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors">      
-      {/* Show Session Header only when there's an active session */}
       {hasActiveSession && <SessionHeader />}
 
       <div className="flex-1 overflow-y-auto p-6">
@@ -438,134 +342,15 @@ function Chat() {
 
                     {message.results && message.results.length > 0 && (
                       <div className="mt-4 space-y-4">
-                        {message.results.map((uc, i) => {
-                          const colors = getStakeholderColor(uc.stakeholders);
-                          
-                          return (
-                            <div 
-                              key={i} 
-                              className={`${colors.bg} border ${colors.border} rounded-lg p-4 ${
-                                uc._refined ? 'ring-2 ring-green-400 dark:ring-green-500' : ''
-                              } transition-all duration-300`}
-                            >
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-2">
-                                  <p className={`font-bold text-lg ${colors.text}`}>{uc.title}</p>
-                                  {uc._refined && (
-                                    <span className="text-xs px-2 py-1 bg-green-200 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full">
-                                      ✨ Refined
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-
-                              {uc.preconditions && uc.preconditions.length > 0 && (
-                                <div className="mb-3">
-                                  <p className={`font-semibold ${colors.text} mb-1`}>📋 Preconditions:</p>
-                                  <ul className="list-disc list-inside ml-2 space-y-1">
-                                    {uc.preconditions.map((pre, idx) => (
-                                      <li key={idx} className={`text-sm ${colors.text} opacity-90`}>
-                                        {pre}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-
-                              {uc.main_flow && uc.main_flow.length > 0 && (
-                                <div className="mb-3">
-                                  <p className={`font-semibold ${colors.text} mb-1`}>🔄 Main Flow:</p>
-                                  <ol className="list-decimal list-inside ml-2 space-y-1">
-                                    {uc.main_flow.map((step, idx) => (
-                                      <li key={idx} className={`text-sm ${colors.text} opacity-90`}>
-                                        {step}
-                                      </li>
-                                    ))}
-                                  </ol>
-                                </div>
-                              )}
-
-                              {uc.sub_flows && uc.sub_flows.length > 0 && (
-                                <div className="mb-3">
-                                  <p className={`font-semibold ${colors.text} mb-1`}>🔀 Sub Flows:</p>
-                                  <ul className="list-disc list-inside ml-2 space-y-1">
-                                    {uc.sub_flows.map((sub, idx) => (
-                                      <li key={idx} className={`text-sm ${colors.text} opacity-90`}>
-                                        {sub}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-
-                              {uc.alternate_flows && uc.alternate_flows.length > 0 && (
-                                <div className="mb-3">
-                                  <p className={`font-semibold ${colors.text} mb-1`}>⚠️ Alternate Flows:</p>
-                                  <ul className="list-disc list-inside ml-2 space-y-1">
-                                    {uc.alternate_flows.map((alt, idx) => (
-                                      <li key={idx} className={`text-sm ${colors.text} opacity-90`}>
-                                        {alt}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-
-                              {uc.outcomes && uc.outcomes.length > 0 && (
-                                <div className="mb-3">
-                                  <p className={`font-semibold ${colors.text} mb-1`}>✅ Outcomes:</p>
-                                  <ul className="list-disc list-inside ml-2 space-y-1">
-                                    {uc.outcomes.map((outcome, idx) => (
-                                      <li key={idx} className={`text-sm ${colors.text} opacity-90`}>
-                                        {outcome}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-
-                              {uc.stakeholders && uc.stakeholders.length > 0 && (
-                                <div>
-                                  <p className={`font-semibold ${colors.text} mb-1`}>👥 Stakeholders:</p>
-                                  <div className="flex flex-wrap gap-2">
-                                    {uc.stakeholders.map((stakeholder, idx) => (
-                                      <span
-                                        key={idx}
-                                        className={`text-xs px-2 py-1 rounded-full ${colors.badge}`}
-                                      >
-                                        {stakeholder}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-                                {uc.id ? (
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={() => setRefiningUseCase(uc.id)}
-                                      className="text-sm px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded hover:bg-indigo-200 dark:hover:bg-indigo-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                                      disabled={refining || refiningUseCase === uc.id}
-                                    >
-                                      {refining && refiningUseCase === uc.id ? (
-                                        <span className="flex items-center gap-1">
-                                          <span className="animate-spin">⏳</span> Refining...
-                                        </span>
-                                      ) : (
-                                        '✨ Refine Use Case'
-                                      )}
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    💡 Refinement available for stored use cases only
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
+                        {message.results.map((uc, i) => (
+                          <UseCaseCard
+                            key={i}
+                            useCase={uc}
+                            compact={true}
+                            showActions={false}
+                            onRefined={loadConversationHistory}
+                          />
+                        ))}
                       </div>
                     )}
                   </div>
@@ -595,61 +380,6 @@ function Chat() {
           </div>
         )}
       </div>
-
-      {refiningUseCase && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 border border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Refine Use Case</h2>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Refinement Type
-              </label>
-              <select
-                value={refineType}
-                onChange={(e) => setRefineType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              >
-                <option value="more_main_flows">Refine Main Flows</option>
-                <option value="more_sub_flows">Refine Sub Flows</option>
-                <option value="more_alternate_flows">Refine Alternate Flows</option>
-                <option value="more_preconditions">Refine Preconditions</option>
-                <option value="more_stakeholders">Refine Stakeholders</option>
-              </select>
-            </div>
-
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => {
-                  setRefiningUseCase(null);
-                  setRefineType('more_main_flows');
-                }}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition"
-                disabled={refining}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleRefineUseCase(refiningUseCase, refineType)}
-                className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                disabled={refining}
-              >
-                {refining ? (
-                  <>
-                    <span className="animate-spin">⏳</span>
-                    <span>Refining...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>✨</span>
-                    <span>Refine</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 flex-shrink-0 transition-colors">
         <div className="max-w-4xl mx-auto">
@@ -689,7 +419,7 @@ function Chat() {
               <textarea
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyPress}
                 placeholder="Describe your requirements... (Press Enter to send, Shift+Enter for new line)"
                 className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none transition-colors"
                 rows={2}

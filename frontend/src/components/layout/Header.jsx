@@ -29,7 +29,7 @@ function Header() {
           </div>
         </Link>
 
-        {/* Theme Controls */}
+        {/* Theme Controls (Now a menu button) */}
         <ThemeControls />
       </div>
     </header>

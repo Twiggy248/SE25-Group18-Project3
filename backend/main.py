@@ -16,7 +16,7 @@ import time
 import uuid
 import requests
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 
 import torch
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, Request, Response
@@ -106,6 +106,11 @@ class RefinementRequest(BaseModel):
 class QueryRequest(BaseModel):
     session_id: str
     question: str
+
+class UserPreferences(BaseModel):
+    darkMode: bool
+    stakeholderColorMode: bool
+    stakeholderColors: Dict[str, str]
 
 
 # --- Load LLaMA 3.2 3B Instruct ---
@@ -2507,6 +2512,84 @@ def export_session(session_id: str, request: Request):
         "use_cases": use_cases,
         "latest_summary": summary,
     }
+
+@app.post("/user/preferences")
+def save_user_preferences(preferences: UserPreferences, request: Request):
+    """Save user theme preferences to database"""
+    user_id = require_user(request)
+    
+    db = sqlite3.connect(get_db_path())
+    c = db.cursor()
+    
+    # Store preferences as JSON
+    preferences_json = json.dumps({
+        "darkMode": preferences.darkMode,
+        "stakeholderColorMode": preferences.stakeholderColorMode,
+        "stakeholderColors": preferences.stakeholderColors
+    })
+    
+    # Update or insert preferences
+    c.execute("""
+        UPDATE users 
+        SET preferences = ?
+        WHERE id = ?
+    """, (preferences_json, user_id))
+    
+    db.commit()
+    db.close()
+    
+    return {
+        "success": True,
+        "message": "Preferences saved successfully"
+    }
+
+
+@app.get("/user/preferences")
+def get_user_preferences(request: Request):
+    """Retrieve user theme preferences from database"""
+    user_id = require_user(request)
+    
+    db = sqlite3.connect(get_db_path())
+    c = db.cursor()
+    
+    c.execute("SELECT preferences FROM users WHERE id = ?", (user_id,))
+    row = c.fetchone()
+    db.close()
+    
+    if not row or not row[0]:
+        # Return default preferences if none exist
+        return {
+            "darkMode": False,
+            "stakeholderColorMode": False,
+            "stakeholderColors": {
+                'customer': 'blue',
+                'admin': 'purple',
+                'administrator': 'purple',
+                'user': 'green',
+                'system': 'orange',
+                'application': 'orange',
+                'platform': 'orange',
+                'manager': 'red',
+                'employee': 'teal',
+                'staff': 'teal',
+                'member': 'cyan',
+                'visitor': 'gray',
+                'guest': 'gray',
+                'buyer': 'indigo',
+                'seller': 'pink',
+                'vendor': 'pink',
+                'supplier': 'pink',
+                'student': 'yellow',
+                'teacher': 'indigo',
+                'instructor': 'indigo',
+                'patient': 'blue',
+                'doctor': 'red',
+                'nurse': 'teal'
+            }
+        }
+    
+    preferences = json.loads(row[0])
+    return preferences
 
 
 @app.get("/health")
