@@ -65,15 +65,6 @@ jobs:
           echo "### ✅ Backend Coverage: $COVERAGE%" >> $GITHUB_STEP_SUMMARY
         fi
     
-    - name: Comment backend coverage on PR
-      if: github.event_name == 'pull_request'
-      uses: marocchino/sticky-pull-request-comment@v2
-      with:
-        header: backend-coverage
-        message: |
-          ## 🐍 Backend Test Coverage
-          **Coverage:** ${{ steps.backend-coverage.outputs.percentage }}%
-
   frontend-tests:
     name: Frontend Tests (React + Vitest)
     runs-on: ubuntu-latest
@@ -121,15 +112,6 @@ jobs:
           echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
           echo "### ✅ Frontend Coverage: $COVERAGE%" >> $GITHUB_STEP_SUMMARY
         fi
-    
-    - name: Comment frontend coverage on PR
-      if: github.event_name == 'pull_request'
-      uses: marocchino/sticky-pull-request-comment@v2
-      with:
-        header: frontend-coverage
-        message: |
-          ## ⚛️ Frontend Test Coverage
-          **Coverage:** ${{ steps.frontend-coverage.outputs.percentage }}%
 
   all-tests:
     name: All Tests Status
