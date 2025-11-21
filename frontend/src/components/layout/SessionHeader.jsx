@@ -8,14 +8,13 @@
 // License: MIT License - see LICENSE file in the root directory.
 // -----------------------------------------------------------------------------
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import useSessionStore from '../../store/useSessionStore';
-import { api } from '../../api/client';
 
 function SessionHeader() {
   const location = useLocation();
-  const { currentSessionId, sessionTitle, sessions } = useSessionStore();
+  const { currentSessionId, sessionTitle } = useSessionStore();
   
   const displayTitle = currentSessionId 
     ? (sessionTitle || 'New Session')
@@ -52,16 +51,17 @@ function SessionHeader() {
   ];
 
   return (
-    <div className="bg-gray-50 border-b border-gray-200 px-6 py-3">
+    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 transition-colors">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Session Title */}
         <div className="flex items-center gap-3">
-          <span className="text-2xl"></span>
-          <h2 className="text-lg font-semibold text-gray-900">
+          <span className="text-2xl">💬</span>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             {displayTitle}
           </h2>
         </div>
-        {/* Session Controls */}
+
+        {/* Session Navigation */}
         <nav className="flex items-center gap-1">
           {navItems.map((item) => (
             <Link
@@ -69,8 +69,8 @@ function SessionHeader() {
               to={item.path}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition text-sm ${
                 location.pathname === item.path
-                  ? 'bg-indigo-100 text-indigo-700 font-medium'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-medium'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
               {item.icon}
