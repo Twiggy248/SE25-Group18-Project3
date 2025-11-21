@@ -55,12 +55,13 @@ def test_db():
 
 def test_create_and_get_session(test_db):
     session_id = "test_session_1"
+    user_id = "test1"
     project_context = "Test Project"
     domain = "Test Domain"
     session_title = "Test Session Title"
 
     # Create session with title
-    create_session(session_id, project_context, domain, session_title)
+    create_session(session_id, user_id, project_context, domain, session_title)
 
     # Get session context
     context = get_session_context(session_id)
@@ -80,7 +81,8 @@ def test_create_and_get_session(test_db):
 
 def test_update_session_context(test_db):
     session_id = "test_session_2"
-    create_session(session_id)
+    user_id = "test2"
+    create_session(session_id, user_id)
 
     # Update context
     new_context = "Updated Project"
@@ -131,7 +133,8 @@ def test_update_session_context(test_db):
 
 def test_use_case_management(test_db):
     session_id = "test_session_4"
-    create_session(session_id)
+    user_id = "test4"
+    create_session(session_id, user_id)
 
     # Create a test use case
     conn = sqlite3.connect(test_db)
@@ -193,7 +196,8 @@ def test_use_case_management(test_db):
 
 def test_session_summaries(test_db):
     session_id = "test_session_5"
-    create_session(session_id)
+    user_id = "test5"
+    create_session(session_id, user_id)
 
     # Add summary
     summary = "Test summary"
@@ -301,11 +305,12 @@ def test_migrate_db_session_title(test_db):
 def test_update_session_with_title(test_db):
     """Test updating session title"""
     session_id = "test_update_title"
+    user_id = "test6"
     initial_title = "Initial Title"
     updated_title = "Updated Title"
 
     # Create session with initial title
-    create_session(session_id, session_title=initial_title)
+    create_session(session_id, user_id, session_title=initial_title)
 
     # Update just the title
     update_session_context(session_id, session_title=updated_title)
@@ -325,10 +330,11 @@ def test_get_session_title(test_db):
     from db import get_session_title
     
     session_id = "test_get_title"
+    user_id = "test6"
     title = "My Test Session"
     
     # Create session with title
-    create_session(session_id, session_title=title)
+    create_session(session_id, user_id, session_title=title)
     
     # Get title
     retrieved_title = get_session_title(session_id)
@@ -433,7 +439,8 @@ def test_session_summary_workflow(test_db):
 def test_get_conversation_history_with_limit(test_db):
     """Test conversation history with different limits"""
     session_id = "test_history_limit"
-    create_session(session_id)
+    user_id = "test6"
+    create_session(session_id, user_id)
     
     # Add multiple messages
     for i in range(10):
@@ -455,7 +462,8 @@ def test_get_conversation_history_with_limit(test_db):
 def test_update_session_context_all_fields(test_db):
     """Test updating all session context fields"""
     session_id = "test_full_update"
-    create_session(session_id)
+    user_id = "test7"
+    create_session(session_id, user_id)
     
     # Update all fields
     update_session_context(
@@ -476,7 +484,8 @@ def test_update_session_context_all_fields(test_db):
 def test_get_use_case_by_id_with_valid_id(test_db):
     """Test getting use case by valid ID"""
     session_id = "test_get_usecase"
-    create_session(session_id)
+    user_id = "test8"
+    create_session(session_id, user_id)
     
     # Get existing use cases
     use_cases = get_session_use_cases(session_id)
@@ -495,7 +504,8 @@ def test_get_use_case_by_id_with_valid_id(test_db):
 def test_update_session_context_partial(test_db):
     """Test updating only some session context fields"""
     session_id = "test_partial"
-    create_session(session_id)
+    user_id = "test9"
+    create_session(session_id, user_id)
     
     # Update only project
     update_session_context(session_id=session_id, project_context="Just Project")
