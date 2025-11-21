@@ -1,9 +1,10 @@
 from fastapi import Request, HTTPException, APIRouter
 from routers import api_session, api_user, api_parse
 from backend.database.models import RefinementRequest, QueryRequest
-from backend.database.db import get_use_case_by_id, update_use_case
+from backend.database.managers import usecase_db_manager
 import main, json, re
-from security import require_user
+import managers.query_manager as query
+from security import require_user, session_belongs_to_user
 router = APIRouter()
 
 router.include_router(api_session.router)
@@ -14,40 +15,12 @@ router.include_router(api_parse.router)
 def refine_use_case_endpoint(request: RefinementRequest):
     """Refine a specific use case based on user request"""
 
-    use_case = get_use_case_by_id(request.use_case_id)
+    use_case = usecase_db_manager.get_use_case_by_id(request.use_case_id)
     if not use_case:
         raise HTTPException(status_code=404, detail="Use case not found")
 
     # Build refinement prompt based on type
-    if request.refinement_type == "more_main_flows":
-        instruction = "Add more main flows (additional primary flows or steps) to this use case. Expand the main flow with more detailed or additional steps."
-    elif request.refinement_type == "more_sub_flows":
-        instruction = "Add more sub flows to this use case. Include additional branching scenarios, related flows, or secondary paths."
-    elif request.refinement_type == "more_alternate_flows":
-        instruction = "Add more alternate flows to this use case. Include alternative paths, edge cases, error scenarios, and exception handling flows."
-    elif request.refinement_type == "more_preconditions":
-        instruction = "Add more preconditions to this use case. Include additional requirements, system states, or conditions that must be met before the use case can execute."
-    elif request.refinement_type == "more_stakeholders":
-        instruction = "Add more stakeholders to this use case. Identify additional actors, users, systems, or entities involved in this use case."
-    else:
-        instruction = "Improve the overall quality and completeness of this use case."
-
-    prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-
-                You are a requirements analyst refining a use case.
-
-                <|eot_id|><|start_header_id|>user<|end_header_id|>
-
-                Current use case:
-                {json.dumps(use_case, indent=2)}
-
-                Task: {instruction}
-
-                Return the refined use case in the same JSON format, with improvements applied.
-
-                <|eot_id|><|start_header_id|>assistant<|end_header_id|>
-
-                """
+    prompt = query.refineQueryGeneration(use_case, request.refinement_type)
 
     try:
         outputs = main.pipe(
@@ -74,12 +47,10 @@ def refine_use_case_endpoint(request: RefinementRequest):
             refined = json.loads(json_str)
 
             # Update in database
-            update_use_case(request.use_case_id, refined)
+            usecase_db_manager.update_use_case(request.use_case_id, refined)
 
-            return {
-                "message": "Use case refined successfully",
-                "refined_use_case": refined,
-            }
+            return {"message": "Use case refined successfully",
+                    "refined_use_case": refined}
         else:
             raise ValueError("Could not extract valid JSON from refinement")
 
@@ -93,11 +64,11 @@ def query_requirements(request: QueryRequest, request_data: Request):
     user_id = require_user(request_data)
     session_id = request.session_id
 
-    if not api_session.session_belongs_to_user(session_id, user_id):
+    if not session_belongs_to_user(session_id, user_id):
         raise HTTPException(403, "Forbidden")
 
 
-    use_cases = api_session.get_session_use_cases(request.session_id)
+    use_cases = usecase_db_manager.get_use_case_by_session(request.session_id)
 
     if not use_cases:
         return {
@@ -122,21 +93,7 @@ def query_requirements(request: QueryRequest, request_data: Request):
 
     context = json.dumps(use_cases_for_context, indent=2)
 
-    prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-                You are a requirements analyst assistant. Answer questions about use cases clearly and concisely.
-                IMPORTANT: Do NOT mention use case IDs, numbers, or database identifiers in your responses. Only refer to use cases by their titles.
-
-                <|eot_id|><|start_header_id|>user<|end_header_id|>
-
-                Use cases:
-                {context}
-
-                Question: {request.question}
-
-                Provide a clear, helpful answer based on the use cases above. Do not include any use case numbers or IDs in your response.
-
-                <|eot_id|><|start_header_id|>assistant<|end_header_id|>
-                """
+    prompt = query.requirementsQueryGeneration(context, request.question)
 
     try:
         outputs = main.pipe(
@@ -179,6 +136,8 @@ def query_requirements(request: QueryRequest, request_data: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
 
+
+# NOTE: Why have this if it is hardcoded?
 @router.get("/health")
 def health_check():
     """Health check endpoint with system info"""
@@ -228,6 +187,7 @@ def health_check():
         },
     }
 
+# NOTE: Why have this if it is hardcoded?
 @router.get("/")
 def root():
     """Root endpoint with API information"""

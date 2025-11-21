@@ -7,19 +7,25 @@ from typing import Optional
 import torch
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Request
 from sentence_transformers import util
-from database.managers import session_db_manager
+from database.managers import session_db_manager, usecase_db_manager
 from backend.utilities.document_parser import (extract_text_from_file, get_text_stats,
                              validate_file_size)
 from backend.utilities.rag import build_memory_context
 from use_case.use_case_validator import UseCaseValidator
 from backend.database.models import UseCaseSchema, InputText
-from backend.api.router import require_user
+from backend.api.security import require_user
 import main
 from database.db import db_path
 from managers.session_manager import generate_session_title
 from managers.use_case_manager import get_smart_max_use_cases, extract_use_cases_batch, extract_use_cases_single_stage
 from utilities.use_case_utilities import flatten_use_case, compute_usecase_embedding
 from managers.parse_manager import parse_large_document_chunked
+
+"""
+api_parse.py
+Handles any Parsing Use Case API Calls
+"""
+
 
 router = APIRouter(
     prefix="/parse_use_case_",
@@ -36,6 +42,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
     - Handles any size: tiny to very large
     """
 
+    # NOTE: Why is a uuid being generated?
     session_id = request.session_id or str(uuid.uuid4())
     user_id = require_user(request_data)
 
@@ -60,9 +67,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
         # Don't update the session title if it already exists (prevents overwriting file upload titles)
         update_needed = False
 
-        if request.project_context and request.project_context != existing_context.get(
-            "project_context"
-        ):
+        if request.project_context and request.project_context != existing_context.get("project_context"):
             update_needed = True
 
         if request.domain and request.domain != existing_context.get("domain"):
@@ -80,11 +85,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
             print(f"   Domain: {existing_context.get('domain') or 'Not set'}")
 
     # Store user input in conversation history
-    session_db_manager.add_conversation_message(
-        session_id=session_id,
-        role="user",
-        content=request.raw_text,
-        metadata={"type": "requirement_input"})
+    session_db_manager.add_conversation_message(session_id, "user", request.raw_text, {"type": "requirement_input"})
     
     print(f"💬 User message stored in session: {session_id}")
 
@@ -110,7 +111,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
         # Get memory context
         conversation_history = session_db_manager.get_conversation_history(session_id, limit=10)
         session_context = session_db_manager.get_session_context(session_id) or {}
-        previous_use_cases = session_db_manager.get_session_use_cases(session_id)
+        previous_use_cases = usecase_db_manager.get_use_case_by_session(session_id)
 
         memory_context = build_memory_context(conversation_history, session_context, previous_use_cases)
 
@@ -130,11 +131,10 @@ def parse_use_case_fast(request: InputText, request_data: Request):
             )
 
         if not use_cases_raw:
-            return {
-                "message": "No use cases could be extracted",
-                "session_id": session_id,
-                "results": [],
-                "validation_results": []}
+            return {"message": "No use cases could be extracted",
+                    "session_id": session_id,
+                    "results": [],
+                    "validation_results": []}
 
         # Validate and store
         all_use_cases = []
@@ -151,28 +151,22 @@ def parse_use_case_fast(request: InputText, request_data: Request):
                 all_use_cases.append(UseCaseSchema(**flat))
 
                 validation_results.append(
-                    {
-                        "title": flat["title"],
+                    {   "title": flat["title"],
                         "status": "valid" if is_valid else "valid_with_warnings",
                         "issues": issues,
-                        "quality_score": quality_score,
-                    })
+                        "quality_score": quality_score})
 
             except Exception as e:
                 print(f"⚠️  Validation error for '{uc_dict.get('title', 'Unknown')}': {e}")
                 validation_results.append(
-                    {
-                        "title": uc_dict.get("title", "Unknown"),
+                    {   "title": uc_dict.get("title", "Unknown"),
                         "status": "error",
-                        "reason": str(e),
-                    })
+                        "reason": str(e)})
 
         # Check for duplicates
         conn = sqlite3.connect(db_path)
         c = conn.cursor()
-        c.execute(
-            "SELECT title, main_flow FROM use_cases WHERE session_id = ?", (session_id,)
-        )
+        c.execute("SELECT title, main_flow FROM use_cases WHERE session_id = ?", (session_id,))
         existing_rows = c.fetchall()
         conn.close()
 
@@ -228,32 +222,28 @@ def parse_use_case_fast(request: InputText, request_data: Request):
 
                 # NEW CODE - Return FULL use case details
                 results.append(
-                    {
-                        "status": "stored",
-                        "id": use_case_id,
-                        "title": uc.title,
-                        "preconditions": uc.preconditions,
-                        "main_flow": uc.main_flow,
-                        "sub_flows": uc.sub_flows,
-                        "alternate_flows": uc.alternate_flows,
-                        "outcomes": uc.outcomes,
-                        "stakeholders": uc.stakeholders,
-                    })
+                    {"status": "stored",
+                     "id": use_case_id,
+                     "title": uc.title,
+                     "preconditions": uc.preconditions,
+                     "main_flow": uc.main_flow,
+                     "sub_flows": uc.sub_flows,
+                     "alternate_flows": uc.alternate_flows,
+                     "outcomes": uc.outcomes,
+                     "stakeholders": uc.stakeholders})
                 stored_count += 1
                 print(f"💾 Stored: {uc.title}")
             else:
                 # NEW CODE - Return full details even for duplicates
                 results.append(
-                    {
-                        "status": "duplicate_skipped",
-                        "title": uc.title,
-                        "preconditions": uc.preconditions,
-                        "main_flow": uc.main_flow,
-                        "sub_flows": uc.sub_flows,
-                        "alternate_flows": uc.alternate_flows,
-                        "outcomes": uc.outcomes,
-                        "stakeholders": uc.stakeholders,
-                    })
+                    {"status": "duplicate_skipped",
+                     "title": uc.title,
+                     "preconditions": uc.preconditions,
+                     "main_flow": uc.main_flow,
+                     "sub_flows": uc.sub_flows,
+                     "alternate_flows": uc.alternate_flows,
+                     "outcomes": uc.outcomes,
+                     "stakeholders": uc.stakeholders})
 
         total_time = time.time() - start_time
 
@@ -267,13 +257,10 @@ def parse_use_case_fast(request: InputText, request_data: Request):
             session_id=session_id,
             role="assistant",
             content=f"Smart extraction: {len(use_cases_raw)} use cases in {total_time:.1f}s",
-            metadata={
-                "use_cases": results,
-                "validation_results": validation_results,
-                "extraction_method": extraction_method,
-                "processing_time": total_time,
-            },
-        )
+            metadata={"use_cases": results,
+                     "validation_results": validation_results,
+                     "extraction_method": extraction_method,
+                     "processing_time": total_time})
 
         print(f"\n{'='*80}")
         print(f"✅ SMART EXTRACTION COMPLETE")
@@ -305,13 +292,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
         # Large text - use chunked processing
         print(f"⚠️  Using chunked processing (text is {stats['size_category']})\n")
 
-        return parse_large_document_chunked(
-            text=request.raw_text,
-            session_id=session_id,
-            project_context=request.project_context,
-            domain=request.domain,
-            filename="text_input",
-        )
+        return parse_large_document_chunked(request.raw_text, session_id, request.project_context, request.domain, "text_input")
 
 
 @router.post("document/")
@@ -335,6 +316,7 @@ async def parse_use_case_from_document(request: Request, file: UploadFile = File
     validate_file_size(file, max_size_mb=10)
 
     # Extract text from document
+    # NOTE: Why is it catching an error then re-throwing an error?
     try:
         extracted_text, file_type = extract_text_from_file(file)
     except HTTPException as e:
@@ -353,6 +335,7 @@ async def parse_use_case_from_document(request: Request, file: UploadFile = File
     print(f"   Size category: {stats['size_category']}")
 
     # Create/get session - ENHANCED with better debugging
+    # NOTE: Why is session id being generated by uuid if it doesn't exist???????
     if session_id is None:
         session_id = str(uuid.uuid4())
         print(f"\n🆕 Generated new session_id: {session_id} (no session provided)")
@@ -421,10 +404,4 @@ async def parse_use_case_from_document(request: Request, file: UploadFile = File
         # Large document - use chunking with smart estimation per chunk
         print(f"\n⚠️  Document is {stats['size_category']} - using chunked processing with smart estimation\n")
 
-        return parse_large_document_chunked(
-            text=extracted_text,
-            session_id=session_id,
-            project_context=project_context,
-            domain=domain,
-            filename=file.filename,
-        )
+        return parse_large_document_chunked(extracted_text, session_id, project_context, domain, file.filename)

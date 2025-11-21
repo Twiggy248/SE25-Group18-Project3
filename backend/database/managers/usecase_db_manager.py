@@ -2,8 +2,12 @@ import sqlite3, json
 from typing import List, Dict, Optional
 from db import db_path
 
+"""
+usecase_db_manager.py
+Handles any Database Operations involving Use Cases
+"""
 
-def get_session_use_cases(session_id: str) -> List[Dict]:
+def get_use_case_by_session(session_id: str) -> List[Dict]:
     """Get all use cases generated in this session"""
     conn = sqlite3.connect(db_path)
     c = conn.cursor()

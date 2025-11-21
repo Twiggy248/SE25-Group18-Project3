@@ -8,11 +8,14 @@ from use_case.use_case_enrichment import enrich_use_case
 from backend.utilities.use_case_utilities import get_smart_max_use_cases, get_smart_token_budget
 from utilities.llm_generation import clean_llm_json
 from utilities.misc import ensure_string_list
+from utilities.key_values import ACTION_VERBS, ACTORS
 
+"""
+use_case_manager.py
+Handles any operations (outside of API or Database) that deal with Use Cases
+"""
 
-def extract_use_cases_single_stage(
-    text: str, memory_context: str, max_use_cases: int = None
-) -> List[dict]:
+def extract_use_cases_single_stage(text: str, memory_context: str, max_use_cases: int = None) -> List[dict]:
     """
     ROBUST SINGLE-STAGE EXTRACTION
     - Better prompting
@@ -30,56 +33,56 @@ def extract_use_cases_single_stage(
     # ✅ IMPROVED PROMPT - Clearer, more explicit
     prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
-You are a requirements analyst. Extract use cases from text and return them as JSON.
+                You are a requirements analyst. Extract use cases from text and return them as JSON.
 
-CRITICAL RULES:
-1. Each action mentioned should be a SEPARATE use case
-2. DO NOT create duplicate use cases with the same title
-3. Each use case must be unique and distinct
-4. Split compound actions: "logs in and adds" → 2 separate use cases
+                CRITICAL RULES:
+                1. Each action mentioned should be a SEPARATE use case
+                2. DO NOT create duplicate use cases with the same title
+                3. Each use case must be unique and distinct
+                4. Split compound actions: "logs in and adds" → 2 separate use cases
 
 
-<|eot_id|><|start_header_id|>user<|end_header_id|>
+                <|eot_id|><|start_header_id|>user<|end_header_id|>
 
-{memory_context}
+                {memory_context}
 
-Requirements:
-{text}
+                Requirements:
+                {text}
 
-Extract approximately {max_use_cases} UNIQUE, DISTINCT use cases from the requirements above.
+                Extract approximately {max_use_cases} UNIQUE, DISTINCT use cases from the requirements above.
 
-IMPORTANT: 
-- "User logs in and adds to cart" → Create 2 separate use cases:
-  1. "User logs in to system"  
-  2. "User adds items to cart"
-- DO NOT create the same use case twice
-- Each use case must have a different title
+                IMPORTANT: 
+                - "User logs in and adds to cart" → Create 2 separate use cases:
+                1. "User logs in to system"  
+                2. "User adds items to cart"
+                - DO NOT create the same use case twice
+                - Each use case must have a different title
 
-Return a JSON array where EACH use case has UNIQUE title and purpose:
-[
-  {{
-    "title": "User logs in to system",
-    "preconditions": ["User has valid credentials"],
-    "main_flow": ["User opens app", "User enters credentials", "System validates", "User is authenticated"],
-    "sub_flows": ["User can reset password", "User can remember device"],
-    "alternate_flows": ["If invalid: System shows error", "If locked: System requires unlock"],
-    "outcomes": ["User is logged in successfully"],
-    "stakeholders": ["User", "Authentication System"]
-  }},
-  {{
-    "title": "User adds items to shopping cart",
-    "preconditions": ["User is logged in", "Products are available"],
-    "main_flow": ["User browses products", "User selects product", "User clicks add to cart", "System adds item", "Cart is updated"],
-    "sub_flows": ["User can adjust quantity", "User can view cart"],
-    "alternate_flows": ["If out of stock: System notifies user", "If cart full: System prompts checkout"],
-    "outcomes": ["Item added to cart successfully"],
-    "stakeholders": ["User", "Shopping Cart System", "Inventory System"]
-  }}
-]
+                Return a JSON array where EACH use case has UNIQUE title and purpose:
+                [
+                {{
+                    "title": "User logs in to system",
+                    "preconditions": ["User has valid credentials"],
+                    "main_flow": ["User opens app", "User enters credentials", "System validates", "User is authenticated"],
+                    "sub_flows": ["User can reset password", "User can remember device"],
+                    "alternate_flows": ["If invalid: System shows error", "If locked: System requires unlock"],
+                    "outcomes": ["User is logged in successfully"],
+                    "stakeholders": ["User", "Authentication System"]
+                }},
+                {{
+                    "title": "User adds items to shopping cart",
+                    "preconditions": ["User is logged in", "Products are available"],
+                    "main_flow": ["User browses products", "User selects product", "User clicks add to cart", "System adds item", "Cart is updated"],
+                    "sub_flows": ["User can adjust quantity", "User can view cart"],
+                    "alternate_flows": ["If out of stock: System notifies user", "If cart full: System prompts checkout"],
+                    "outcomes": ["Item added to cart successfully"],
+                    "stakeholders": ["User", "Shopping Cart System", "Inventory System"]
+                }}
+                ]
 
-<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+                <|eot_id|><|start_header_id|>assistant<|end_header_id|>
 
-["""
+                ["""
 
     try:
         print(f"🚀 ROBUST SINGLE-STAGE EXTRACTION")
@@ -202,9 +205,7 @@ Return a JSON array where EACH use case has UNIQUE title and purpose:
         traceback.print_exc()
         return extract_with_smart_fallback(text)
 
-def extract_use_cases_batch(
-    text: str, memory_context: str, max_use_cases: int
-) -> List[dict]:
+def extract_use_cases_batch(text: str, memory_context: str, max_use_cases: int) -> List[dict]:
     """
     BATCH EXTRACTION - Extract use cases in small batches for speed
     Optimized for RTX 3050: 3-5x faster than single-stage
@@ -365,67 +366,6 @@ def extract_with_smart_fallback(text: str) -> List[dict]:
     use_cases = []
     seen_titles = set()
 
-    # Enhanced actors list
-    actors = [
-        "user",
-        "users",
-        "customer",
-        "customers",
-        "admin",
-        "administrator",
-        "staff",
-        "system",
-        "platform",
-        "application",
-        "restaurant",
-        "driver",
-        "delivery person",
-        "manager",
-        "employee",
-    ]
-
-    # Enhanced verbs with better mappings
-    verbs = {
-        "find": "finds",
-        "search": "searches",
-        "view": "views",
-        "see": "views",
-        "show": "shows",
-        "display": "displays",
-        "list": "lists",
-        "filter": "filters",
-        "sort": "sorts",
-        "select": "selects",
-        "add": "adds",
-        "create": "creates",
-        "place": "places",
-        "update": "updates",
-        "edit": "edits",
-        "modify": "modifies",
-        "change": "changes",
-        "delete": "deletes",
-        "remove": "removes",
-        "mark": "marks",
-        "track": "tracks",
-        "monitor": "monitors",
-        "check": "checks",
-        "send": "sends",
-        "receive": "receives",
-        "confirm": "confirms",
-        "reject": "rejects",
-        "accept": "accepts",
-        "approve": "approves",
-        "rate": "rates",
-        "review": "reviews",
-        "order": "orders",
-        "pay": "pays",
-        "make payment": "makes payment",
-        "deliver": "delivers",
-        "manage": "manages",
-        "view": "views",
-        "see": "views",
-    }
-
     # Split into sentences
     sentences = [s.strip() for s in re.split(r"[.!?]+", text) if len(s.strip()) > 20]
 
@@ -436,7 +376,7 @@ def extract_with_smart_fallback(text: str) -> List[dict]:
         # Pattern 2: "Platform/System should let/allow actors verb object"
         # Pattern 3: "Actor verb object" (direct statement)
 
-        for actor in actors:
+        for actor in ACTORS:
             # Try multiple patterns
             patterns = [
                 # "Users should be able to track"
@@ -471,10 +411,10 @@ def extract_with_smart_fallback(text: str) -> List[dict]:
                         continue
 
                     # Skip if verb not in our list
-                    if verb not in verbs:
+                    if verb not in ACTION_VERBS:
                         continue
 
-                    conjugated = verbs.get(verb, verb + "s")
+                    conjugated = ACTION_VERBS[ACTION_VERBS.index(verb)]
 
                     # Build title
                     title = f"{actor.capitalize()} {conjugated} {obj}"

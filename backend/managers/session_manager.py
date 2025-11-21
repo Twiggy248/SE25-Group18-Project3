@@ -1,6 +1,8 @@
 import main, re
 from utilities.key_values import ACTION_VERBS, ACTORS
 
+# NOTE: Why is max_length a parameter if it is never passed in?
+# NOTE: Why is the use_llm being passed if it is always passed as true by outside functions?
 def generate_session_title(first_user_message: str, max_length: int = 50, use_llm: bool = False) -> str:
     """
     Generate a concise, meaningful session title from the first user message.
