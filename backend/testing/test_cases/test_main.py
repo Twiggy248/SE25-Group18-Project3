@@ -9,9 +9,8 @@
 # -----------------------------------------------------------------------------
 
 import json
-import os
 from io import BytesIO
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 import torch
@@ -19,11 +18,9 @@ from fastapi import File, UploadFile
 from fastapi.testclient import TestClient
 
 from main import (UseCaseEstimator, app, clean_llm_json,
-                  compute_usecase_embedding, ensure_string_list,
-                  extract_use_cases_batch, flatten_use_case,
+                  compute_usecase_embedding, ensure_string_list, flatten_use_case,
                   generate_fallback_title, generate_session_title,
-                  get_smart_max_use_cases, get_smart_token_budget,
-                  parse_large_document_chunked)
+                  get_smart_max_use_cases, get_smart_token_budget)
 
 
 @pytest.fixture

@@ -9,18 +9,17 @@
 # License: MIT License - see LICENSE file in the root directory.
 # -----------------------------------------------------------------------------
 
-import os
+import os, torch
 
-import torch
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sentence_transformers import SentenceTransformer
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from transformers import AutoModelForCausalLM, BitsAndBytesConfig, AutoTokenizer, pipeline
 
 from backend.utilities.chunking_strategy import DocumentChunker
 from backend.database.db import init_db, migrate_db
 from dotenv import load_dotenv
-import backend.api.router as router
+from backend.api.router import router
 
 app = FastAPI()
 load_dotenv()
@@ -34,7 +33,7 @@ chunker = DocumentChunker(max_tokens=3000)
 MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"  # Define for tests
 
 # Load in the API Router endpoints
-app.include_router(router.router)
+app.include_router(router)
 
 
 # --- CORS ---
@@ -69,8 +68,6 @@ if not os.getenv("TESTING"):
 
     print("Loading model with 4-bit quantization...")
 
-    from transformers import BitsAndBytesConfig
-
     # Configure 4-bit quantization for RTX 3050
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -93,14 +90,12 @@ if not os.getenv("TESTING"):
 
     pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, device_map="auto")
 
-    print("✅ Model loaded successfully with 4-bit quantization!")
-    print(f"   Model size: ~1.5GB (vs 6GB unquantized)")
-    print(f"   Expected speedup: 2-3x faster\n")
+    print("Model loaded successfully with 4-bit quantization!")
 
     # Already initialized embedding model for duplicate detection
     # Already initialized document chunker
 
 else:
-    print("⚠️  Testing mode: Model loading skipped")
+    print("Testing mode: Model loading skipped")
     embedder = None
     chunker = None

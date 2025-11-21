@@ -1,7 +1,5 @@
 import pytest
-import sys
 import os
-from unittest.mock import MagicMock, patch
 
 # Set TESTING environment variable for the entire test session
 os.environ["TESTING"] = "true"

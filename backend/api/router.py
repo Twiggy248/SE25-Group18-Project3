@@ -1,21 +1,16 @@
-from fastapi import Request, HTTPException
+from fastapi import Request, HTTPException, APIRouter
 from routers import api_session, api_user, api_parse
 from backend.database.models import RefinementRequest, QueryRequest
 from backend.database.db import get_use_case_by_id, update_use_case
 import main, json, re
-app = main.app
+from security import require_user
+router = APIRouter()
 
-app.include_router(api_session.router)
-app.include_router(api_user.router)
-app.include_router(api_parse.router)
+router.include_router(api_session.router)
+router.include_router(api_user.router)
+router.include_router(api_parse.router)
 
-def require_user(request: Request) -> str:
-    uid = request.cookies.get("user_id")
-    if not uid: 
-        raise HTTPException(401, "Not authenticated")
-    return uid
-
-@app.post("/use-case/refine")
+@router.post("/use-case/refine")
 def refine_use_case_endpoint(request: RefinementRequest):
     """Refine a specific use case based on user request"""
 
@@ -39,20 +34,20 @@ def refine_use_case_endpoint(request: RefinementRequest):
 
     prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
-You are a requirements analyst refining a use case.
+                You are a requirements analyst refining a use case.
 
-<|eot_id|><|start_header_id|>user<|end_header_id|>
+                <|eot_id|><|start_header_id|>user<|end_header_id|>
 
-Current use case:
-{json.dumps(use_case, indent=2)}
+                Current use case:
+                {json.dumps(use_case, indent=2)}
 
-Task: {instruction}
+                Task: {instruction}
 
-Return the refined use case in the same JSON format, with improvements applied.
+                Return the refined use case in the same JSON format, with improvements applied.
 
-<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+                <|eot_id|><|start_header_id|>assistant<|end_header_id|>
 
-{{"""
+                """
 
     try:
         outputs = main.pipe(
@@ -91,7 +86,7 @@ Return the refined use case in the same JSON format, with improvements applied.
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Refinement failed: {str(e)}")
 
-@app.post("/query")
+@router.post("/query")
 def query_requirements(request: QueryRequest, request_data: Request):
     """Answer natural language questions about requirements"""
 
@@ -128,22 +123,20 @@ def query_requirements(request: QueryRequest, request_data: Request):
     context = json.dumps(use_cases_for_context, indent=2)
 
     prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+                You are a requirements analyst assistant. Answer questions about use cases clearly and concisely.
+                IMPORTANT: Do NOT mention use case IDs, numbers, or database identifiers in your responses. Only refer to use cases by their titles.
 
-You are a requirements analyst assistant. Answer questions about use cases clearly and concisely.
-IMPORTANT: Do NOT mention use case IDs, numbers, or database identifiers in your responses. Only refer to use cases by their titles.
+                <|eot_id|><|start_header_id|>user<|end_header_id|>
 
-<|eot_id|><|start_header_id|>user<|end_header_id|>
+                Use cases:
+                {context}
 
-Use cases:
-{context}
+                Question: {request.question}
 
-Question: {request.question}
+                Provide a clear, helpful answer based on the use cases above. Do not include any use case numbers or IDs in your response.
 
-Provide a clear, helpful answer based on the use cases above. Do not include any use case numbers or IDs in your response.
-
-<|eot_id|><|start_header_id|>assistant<|end_header_id|>
-
-"""
+                <|eot_id|><|start_header_id|>assistant<|end_header_id|>
+                """
 
     try:
         outputs = main.pipe(
@@ -160,9 +153,7 @@ Provide a clear, helpful answer based on the use cases above. Do not include any
         # Post-process to remove any use case numbers that might have slipped through
         # Remove patterns like "Use Case 249", "Use Case 248", "UC 253", etc.
         answer = re.sub(r"\(Use Case\s+\d+\)", "", answer, flags=re.IGNORECASE)
-        answer = re.sub(
-            r"\(Use Cases\s+\d+[,\s]*\d*\)", "", answer, flags=re.IGNORECASE
-        )
+        answer = re.sub(r"\(Use Cases\s+\d+[,\s]*\d*\)", "", answer, flags=re.IGNORECASE)
         answer = re.sub(r"Use Case\s+\d+", "", answer, flags=re.IGNORECASE)
         answer = re.sub(r"UC\s+\d+", "", answer, flags=re.IGNORECASE)
         # Clean up any double spaces or trailing commas/spaces
@@ -188,7 +179,7 @@ Provide a clear, helpful answer based on the use cases above. Do not include any
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
 
-@app.get("/health")
+@router.get("/health")
 def health_check():
     """Health check endpoint with system info"""
     return {
@@ -237,7 +228,7 @@ def health_check():
         },
     }
 
-@app.get("/")
+@router.get("/")
 def root():
     """Root endpoint with API information"""
     return {

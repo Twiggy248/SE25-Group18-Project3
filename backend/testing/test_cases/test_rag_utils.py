@@ -8,8 +8,7 @@
 # License: MIT License - see LICENSE file in the root directory.
 # -----------------------------------------------------------------------------
 
-import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 

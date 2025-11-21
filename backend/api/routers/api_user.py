@@ -1,6 +1,6 @@
 import os, requests, sqlite3
 from fastapi import APIRouter, HTTPException, Request, Response
-from fastapi.responses import FileResponse, RedirectResponse, JSONResponse 
+from fastapi.responses import RedirectResponse, JSONResponse 
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from backend.database.db import get_db_path
@@ -10,14 +10,17 @@ CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 REDIRECT_URI = "http://localhost:8000/auth/callback"
 
-
+# API Calls for user start with /user and get routed here
 router = APIRouter(
     prefix="/auth",
     tags=["auth"],
 )
 
-@router.get("/auth/google")
+@router.get("/google")
 def auth_google():
+    """
+    Login with a Google Account
+    """
     url = (
         "https://accounts.google.com/o/oauth2/v2/auth"
         "?response_type=code"
@@ -32,6 +35,10 @@ def auth_google():
 
 @router.get("/callback")
 def auth_callback(code: str):
+    """
+    Authentication callback for logging in with Google
+    """
+
     token_url = "https://oauth2.googleapis.com/token"
     data = {
         "code": code, 
@@ -86,6 +93,9 @@ def auth_callback(code: str):
 
 @router.get("/me")
 def auth_me(request: Request):
+    """
+    Get current user information
+    """
     uid = request.cookies.get("user_id")
 
     if not uid: 
@@ -110,5 +120,9 @@ def auth_me(request: Request):
 
 @router.post("/logout")
 def logout_user(response: Response):
+    """
+    Logout current user
+    """
+
     response.delete_cookie("user_id")
     return {"success": True}

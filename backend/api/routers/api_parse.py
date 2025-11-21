@@ -1,6 +1,4 @@
 import json
-import os
-import re
 import sqlite3
 import time
 import uuid
@@ -9,10 +7,7 @@ from typing import Optional
 import torch
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Request
 from sentence_transformers import util
-
-from backend.database.db import (add_conversation_message, create_session,
-                get_conversation_history, get_db_path,
-                get_session_context, get_session_use_cases, update_session_context)
+from database.managers import session_db_manager
 from backend.utilities.document_parser import (extract_text_from_file, get_text_stats,
                              validate_file_size)
 from backend.utilities.rag import build_memory_context
@@ -20,8 +15,9 @@ from use_case.use_case_validator import UseCaseValidator
 from backend.database.models import UseCaseSchema, InputText
 from backend.api.router import require_user
 import main
+from database.db import db_path
 from managers.session_manager import generate_session_title
-from managers.use_case_manager import get_smart_max_use_cases, extract_use_cases_batch, extract_use_cases_single_stage, extract_with_smart_fallback
+from managers.use_case_manager import get_smart_max_use_cases, extract_use_cases_batch, extract_use_cases_single_stage
 from utilities.use_case_utilities import flatten_use_case, compute_usecase_embedding
 from managers.parse_manager import parse_large_document_chunked
 
@@ -44,20 +40,20 @@ def parse_use_case_fast(request: InputText, request_data: Request):
     user_id = require_user(request_data)
 
     # Smart session handling
-    existing_context = get_session_context(session_id)
+    existing_context = session_db_manager.get_session_context(session_id)
 
     if existing_context is None:
         # Generate a title for new session using LLM
         session_title = generate_session_title(request.raw_text, use_llm=True)
 
         # Session doesn't exist - create it with provided context and title
-        create_session(
+        session_db_manager.create_session(
             session_id=session_id,
             user_id=user_id,
             project_context=request.project_context or "",
             domain=request.domain or "",
-            session_title=session_title,
-        )
+            session_title=session_title)
+        
         print(f"✅ Created new session: {session_id} with title: {session_title}")
     else:
         # Session exists - only update context if NEW values are provided
@@ -73,12 +69,10 @@ def parse_use_case_fast(request: InputText, request_data: Request):
             update_needed = True
 
         if update_needed:
-            update_session_context(
+            session_db_manager.update_session_context(
                 session_id=session_id,
                 project_context=request.project_context or None,
-                domain=request.domain or None,
-                # Don't update session_title here to preserve file upload titles
-            )
+                domain=request.domain or None) # Don't update session_title here to preserve file upload titles
             print(f"✅ Updated existing session context: {session_id}")
         else:
             print(f"✅ Using existing session: {session_id}")
@@ -86,12 +80,11 @@ def parse_use_case_fast(request: InputText, request_data: Request):
             print(f"   Domain: {existing_context.get('domain') or 'Not set'}")
 
     # Store user input in conversation history
-    add_conversation_message(
+    session_db_manager.add_conversation_message(
         session_id=session_id,
         role="user",
         content=request.raw_text,
-        metadata={"type": "requirement_input"},
-    )
+        metadata={"type": "requirement_input"})
     
     print(f"💬 User message stored in session: {session_id}")
 
@@ -115,15 +108,11 @@ def parse_use_case_fast(request: InputText, request_data: Request):
         print(f"✅ Using direct processing (text is {stats['size_category']})\n")
 
         # Get memory context
-        conversation_history = get_conversation_history(session_id, limit=10)
-        session_context = get_session_context(session_id) or {}
-        previous_use_cases = get_session_use_cases(session_id)
+        conversation_history = session_db_manager.get_conversation_history(session_id, limit=10)
+        session_context = session_db_manager.get_session_context(session_id) or {}
+        previous_use_cases = session_db_manager.get_session_use_cases(session_id)
 
-        memory_context = build_memory_context(
-            conversation_history=conversation_history,
-            session_context=session_context,
-            previous_use_cases=previous_use_cases,
-        )
+        memory_context = build_memory_context(conversation_history, session_context, previous_use_cases)
 
         start_time = time.time()
 
@@ -132,12 +121,8 @@ def parse_use_case_fast(request: InputText, request_data: Request):
 
         # Choose extraction strategy based on size
         if stats["estimated_tokens"] > 300 and max_use_cases_estimate >= 4:
-            print(
-                f"📦 Using BATCH extraction (better for {max_use_cases_estimate} use cases)\n"
-            )
-            use_cases_raw = extract_use_cases_batch(
-                request.raw_text, memory_context, max_use_cases_estimate
-            )
+            print(f"📦 Using BATCH extraction (better for {max_use_cases_estimate} use cases)\n")
+            use_cases_raw = extract_use_cases_batch(request.raw_text, memory_context, max_use_cases_estimate)
         else:
             print(f"⚡ Using SINGLE-STAGE extraction (small input)\n")
             use_cases_raw = extract_use_cases_single_stage(
@@ -149,8 +134,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
                 "message": "No use cases could be extracted",
                 "session_id": session_id,
                 "results": [],
-                "validation_results": [],
-            }
+                "validation_results": []}
 
         # Validate and store
         all_use_cases = []
@@ -172,23 +156,18 @@ def parse_use_case_fast(request: InputText, request_data: Request):
                         "status": "valid" if is_valid else "valid_with_warnings",
                         "issues": issues,
                         "quality_score": quality_score,
-                    }
-                )
+                    })
 
             except Exception as e:
-                print(
-                    f"⚠️  Validation error for '{uc_dict.get('title', 'Unknown')}': {e}"
-                )
+                print(f"⚠️  Validation error for '{uc_dict.get('title', 'Unknown')}': {e}")
                 validation_results.append(
                     {
                         "title": uc_dict.get("title", "Unknown"),
                         "status": "error",
                         "reason": str(e),
-                    }
-                )
+                    })
 
         # Check for duplicates
-        db_path = get_db_path()
         conn = sqlite3.connect(db_path)
         c = conn.cursor()
         c.execute(
@@ -227,10 +206,10 @@ def parse_use_case_fast(request: InputText, request_data: Request):
                 c = conn.cursor()
                 c.execute(
                     """
-            INSERT INTO use_cases 
-            (session_id, title, preconditions, main_flow, sub_flows, alternate_flows, outcomes, stakeholders)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
+                    INSERT INTO use_cases 
+                    (session_id, title, preconditions, main_flow, sub_flows, alternate_flows, outcomes, stakeholders)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
                     (
                         session_id,
                         uc.title,
@@ -240,8 +219,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
                         json.dumps(uc.alternate_flows),
                         json.dumps(uc.outcomes),
                         json.dumps(uc.stakeholders),
-                    ),
-                )
+                    ))
 
                 # Get the inserted ID
                 use_case_id = c.lastrowid
@@ -260,8 +238,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
                         "alternate_flows": uc.alternate_flows,
                         "outcomes": uc.outcomes,
                         "stakeholders": uc.stakeholders,
-                    }
-                )
+                    })
                 stored_count += 1
                 print(f"💾 Stored: {uc.title}")
             else:
@@ -276,8 +253,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
                         "alternate_flows": uc.alternate_flows,
                         "outcomes": uc.outcomes,
                         "stakeholders": uc.stakeholders,
-                    }
-                )
+                    })
 
         total_time = time.time() - start_time
 
@@ -287,7 +263,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
         )
 
         # Store response
-        add_conversation_message(
+        session_db_manager.add_conversation_message(
             session_id=session_id,
             role="assistant",
             content=f"Smart extraction: {len(use_cases_raw)} use cases in {total_time:.1f}s",
@@ -339,13 +315,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
 
 
 @router.post("document/")
-async def parse_use_case_from_document(
-    request: Request,
-    file: UploadFile = File(...),
-    session_id: Optional[str] = Form(None),
-    project_context: Optional[str] = Form(None),
-    domain: Optional[str] = Form(None),
-):
+async def parse_use_case_from_document(request: Request, file: UploadFile = File(...), session_id: Optional[str] = Form(None), project_context: Optional[str] = Form(None), domain: Optional[str] = Form(None)):
     """
     Extract use cases from uploaded document (PDF, DOCX, TXT, MD)
     Handles documents of any size with intelligent chunking and smart estimation
@@ -390,20 +360,19 @@ async def parse_use_case_from_document(
         print(f"\n🔑 Using provided session_id: {session_id}")
 
     # Check if session exists
-    existing_context = get_session_context(session_id)
+    existing_context = session_db_manager.get_session_context(session_id)
     print(f"📋 Session check for {session_id}: {'EXISTS' if existing_context else 'NEW'}")
     
     if existing_context is None:
         # Generate session title from extracted content (not just filename)
         session_title = generate_session_title(extracted_text, use_llm=True)
         
-        create_session(
+        session_db_manager.create_session(
             session_id=session_id,
             user_id=require_user(request),
             project_context=project_context or "",
             domain=domain or "",
-            session_title=session_title,
-        )
+            session_title=session_title)
         print(f"✅ Created new session for file upload: {session_id} with title: {session_title}")
     else:
         # EXISTING SESSION: Don't overwrite the session title or context  
@@ -415,16 +384,14 @@ async def parse_use_case_from_document(
        
         # Only update if new values provided
         if project_context or domain:
-            update_session_context(
+            session_db_manager.update_session_context(
                 session_id=session_id,
                 project_context=project_context,
-                domain=domain,
-                # CRITICAL: Don't update session_title here
-            )
+                domain=domain) # CRITICAL: Don't update session_title here
             print(f"✅ Updated session context (preserved existing title)")
 
     # Store document upload in conversation history
-    add_conversation_message(
+    session_db_manager.add_conversation_message(
         session_id=session_id,
         role="user",
         content=f"Uploaded document: {file.filename}",
@@ -433,15 +400,12 @@ async def parse_use_case_from_document(
             "filename": file.filename,
             "file_type": file_type,
             "stats": stats,
-        },
-    )
+        })
 
     # Process based on document size
     if stats["size_category"] in ["tiny", "small", "medium"]:
         # Small document - process directly with smart estimation
-        print(
-            f"\n✅ Document is {stats['size_category']} - processing directly with smart estimation\n"
-        )
+        print(f"\n✅ Document is {stats['size_category']} - processing directly with smart estimation\n")
 
         # Use existing parsing logic
         request_data = InputText(
@@ -455,9 +419,7 @@ async def parse_use_case_from_document(
 
     else:
         # Large document - use chunking with smart estimation per chunk
-        print(
-            f"\n⚠️  Document is {stats['size_category']} - using chunked processing with smart estimation\n"
-        )
+        print(f"\n⚠️  Document is {stats['size_category']} - using chunked processing with smart estimation\n")
 
         return parse_large_document_chunked(
             text=extracted_text,

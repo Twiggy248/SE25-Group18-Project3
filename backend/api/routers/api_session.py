@@ -9,20 +9,12 @@ from backend.database.db import (create_session, get_conversation_history, get_l
 from utilities.exports import export_to_docx, export_to_markdown
 from backend.database.models import SessionRequest
 from backend.api.router import require_user
+from security import session_belongs_to_user
 
 router = APIRouter(
     prefix="/session",
     tags=["session"],
 )
-
-def session_belongs_to_user(session_id: str, user_id: str) -> bool:
-    db = sqlite3.connect(get_db_path())
-    c = db.cursor()
-    c.execute("SELECT 1 FROM sessions WHERE session_id = ? AND user_id = ?", (session_id, user_id))
-    row = c.fetchone()
-    db.close()
-    return row is not None
-
 
 @router.post("/create")
 def create_or_get_session(request: SessionRequest, request_obj: Request):

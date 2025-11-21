@@ -12,7 +12,7 @@ import os
 from io import BytesIO
 
 import pytest
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException
 
 from backend.utilities.document_parser import (categorize_text_size, extract_from_text,
                              extract_text_from_file, get_text_stats,
