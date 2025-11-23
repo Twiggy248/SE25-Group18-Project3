@@ -241,3 +241,34 @@ def get_conversation_history(session_id: str, limit: int = 10) -> List[Dict]:
         }
         for row in rows
     ]
+
+def delete_session_by_id(session_id: str):
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+
+    # Delete session data
+    c.execute("DELETE FROM conversation_history WHERE session_id = ?", (session_id,))
+    c.execute("DELETE FROM use_cases WHERE session_id = ?", (session_id,))
+    c.execute("DELETE FROM session_summaries WHERE session_id = ?", (session_id,))
+    c.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
+
+    conn.commit()
+    conn.close()
+
+def get_user_sessions(user_id: str) -> list:
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+
+    c.execute(
+        """
+        SELECT session_id, project_context, domain, session_title, created_at, last_active
+        FROM sessions
+        WHERE user_id = ?
+        ORDER BY last_active DESC
+        """, (user_id,)
+    )
+
+    rows = c.fetchall()
+    conn.close()
+
+    return rows

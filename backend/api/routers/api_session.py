@@ -3,9 +3,8 @@ import sqlite3
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
-from backend.database.db import (create_session, get_conversation_history, get_latest_summary,
-                get_session_context, get_session_title, get_session_use_cases, 
-                update_session_context, get_db_path)
+from database.managers import session_db_manager, usecase_db_manager
+from database.db import db_path
 from utilities.exports import export_to_docx, export_to_markdown
 from backend.database.models import SessionRequest
 from backend.api.router import require_user
@@ -22,7 +21,7 @@ def create_or_get_session(request: SessionRequest, request_obj: Request):
     user_id = require_user(request_obj)
     session_id = request.session_id or str(uuid.uuid4())
 
-    create_session(
+    session_db_manager.create_session(
         session_id=session_id,
         user_id=user_id,
         project_context=request.project_context or "",
@@ -31,7 +30,7 @@ def create_or_get_session(request: SessionRequest, request_obj: Request):
 
     return {
         "session_id": session_id,
-        "context": get_session_context(session_id),
+        "context": session_db_manager.get_session_context(session_id),
         "message": "Session created/retrieved successfully",
     }
 
@@ -47,7 +46,7 @@ def update_session(request_data: SessionRequest, request: Request):
     if not session_belongs_to_user(request_data.session_id, user_id):
         raise HTTPException(403, "Forbidden")
 
-    update_session_context(
+    session_db_manager.update_session_context(
         session_id=request_data.session_id,
         project_context=request_data.project_context,
         domain=request_data.domain,
@@ -63,7 +62,7 @@ def get_session_title_endpoint(session_id: str, request:Request):
     if not session_belongs_to_user(session_id, user_id):
         raise HTTPException(403, "Forbidden")
 
-    title = get_session_title(session_id)
+    title = session_db_manager.get_session_title(session_id)
     if title is None:
         raise HTTPException(status_code=404, detail="Session not found")
     
@@ -77,10 +76,10 @@ def get_session_history(request: Request, session_id: str, limit: int = 10):
     if not session_belongs_to_user(session_id, user_id):
         raise HTTPException(403, "Forbidden")
 
-    history = get_conversation_history(session_id, limit)
-    context = get_session_context(session_id)
-    use_cases = get_session_use_cases(session_id)
-    summary = get_latest_summary(session_id)
+    history = session_db_manager.get_conversation_history(session_id, limit)
+    context = session_db_manager.get_session_context(session_id)
+    use_cases = session_db_manager.get_session_use_cases(session_id)
+    summary = session_db_manager.get_latest_summary(session_id)
 
     return {
         "session_id": session_id,
@@ -94,23 +93,8 @@ def get_session_history(request: Request, session_id: str, limit: int = 10):
 def list_sessions(request: Request):
     """List all active sessions with stored titles"""
     user_id = require_user(request)
-    
-    db_path = get_db_path()
-    conn = sqlite3.connect(db_path)
-    c = conn.cursor()
 
-
-    c.execute(
-        """
-        SELECT session_id, project_context, domain, session_title, created_at, last_active
-        FROM sessions
-        WHERE user_id = ?
-        ORDER BY last_active DESC
-    """, (user_id,)
-    )
-
-    rows = c.fetchall()
-    conn.close()
+    rows = session_db_manager.get_user_sessions(user_id)
 
     # Return sessions with stored titles
     sessions= []
@@ -136,10 +120,10 @@ def export_session(session_id: str, request: Request):
     if not session_belongs_to_user(session_id, user_id):
         raise HTTPException(403, "Forbidden")
 
-    conversation = get_conversation_history(session_id, limit=1000)
-    context = get_session_context(session_id)
-    use_cases = get_session_use_cases(session_id)
-    summary = get_latest_summary(session_id)
+    conversation = session_db_manager.get_conversation_history(session_id, limit=1000)
+    context = session_db_manager.get_session_context(session_id)
+    use_cases = session_db_manager.get_session_use_cases(session_id)
+    summary = session_db_manager.get_latest_summary(session_id)
 
     return {
         "session_id": session_id,
@@ -159,8 +143,8 @@ def export_docx_endpoint(session_id: str, request: Request):
         raise HTTPException(403, "Forbidden")
 
 
-    use_cases = get_session_use_cases(session_id)
-    session_context = get_session_context(session_id)
+    use_cases = session_db_manager.get_session_use_cases(session_id)
+    session_context = session_db_manager.get_session_context(session_id)
 
     if not use_cases:
         raise HTTPException(
@@ -187,8 +171,8 @@ def export_markdown_endpoint(session_id: str, request:Request):
         raise HTTPException(403, "Forbidden")
 
 
-    use_cases = get_session_use_cases(session_id)
-    session_context = get_session_context(session_id)
+    use_cases = usecase_db_manager.get_use_case_by_session(session_id)
+    session_context = session_db_manager.get_session_context(session_id)
 
     if not use_cases:
         raise HTTPException(
@@ -210,19 +194,7 @@ def clear_session(session_id: str, request:Request):
     user_id = require_user(request)
     if not session_belongs_to_user(session_id, user_id):
         raise HTTPException(403, "Forbidden")
-
-
-    db_path = get_db_path()
-    conn = sqlite3.connect(db_path)
-    c = conn.cursor()
-
-    # Delete session data
-    c.execute("DELETE FROM conversation_history WHERE session_id = ?", (session_id,))
-    c.execute("DELETE FROM use_cases WHERE session_id = ?", (session_id,))
-    c.execute("DELETE FROM session_summaries WHERE session_id = ?", (session_id,))
-    c.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
-
-    conn.commit()
-    conn.close()
+    
+    session_db_manager.delete_session_by_id(session_id)
 
     return {"message": f"Session {session_id} cleared successfully"}
