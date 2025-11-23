@@ -1,20 +1,15 @@
-import json
-import sqlite3
-import time
-import uuid
-from typing import Optional
+import json, sqlite3, time, uuid, torch
+import main
 
-import torch
+from typing import Optional
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Request
 from sentence_transformers import util
 from database.managers import session_db_manager, usecase_db_manager
-from backend.utilities.document_parser import (extract_text_from_file, get_text_stats,
-                             validate_file_size)
+from backend.utilities.document_parser import extract_text_from_file, get_text_stats, validate_file_size
 from backend.utilities.rag import build_memory_context
 from use_case.use_case_validator import UseCaseValidator
 from backend.database.models import UseCaseSchema, InputText
 from backend.api.security import require_user
-import main
 from database.db import db_path
 from managers.session_manager import generate_session_title
 from managers.use_case_manager import get_smart_max_use_cases, extract_use_cases_batch, extract_use_cases_single_stage

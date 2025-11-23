@@ -1,10 +1,8 @@
 import uuid
-import sqlite3
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 from database.managers import session_db_manager, usecase_db_manager
-from database.db import db_path
 from utilities.exports import export_to_docx, export_to_markdown
 from backend.database.models import SessionRequest
 from backend.api.router import require_user

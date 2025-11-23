@@ -2,10 +2,6 @@
 # File: export_utils.py
 # Description: Export utilities for ReqEngine - exports use cases to various 
 #              formats including DOCX, PlantUML, and Markdown.
-# Author: Pradyumna Chacham
-# Date: November 2025
-# Copyright (c) 2025 Pradyumna Chacham. All rights reserved.
-# License: MIT License - see LICENSE file in the root directory.
 # -----------------------------------------------------------------------------
 
 """

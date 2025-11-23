@@ -1,20 +1,20 @@
 import main
-import json
-import sqlite3
-import time
+import json, time, sqlite3, torch
 from typing import Optional
 
-import torch
 from sentence_transformers import util
-from backend.database.db import (add_conversation_message,
-                get_conversation_history, get_db_path,
-                get_session_context, get_session_use_cases)
 from backend.utilities.rag import build_memory_context
 from use_case.use_case_validator import UseCaseValidator
 from backend.database.models import UseCaseSchema
+from backend.database.db import db_path
+from backend.database.managers import session_db_manager, usecase_db_manager
 from backend.utilities.use_case_utilities import compute_usecase_embedding, flatten_use_case
 from use_case_manager import extract_use_cases_single_stage
+from utilities.chunking_strategy import DocumentChunker
+from main import embedder
 
+
+# NOTE: Why Import project_context or domain if never used?
 def parse_large_document_chunked(text: str, session_id: str, project_context: Optional[str] = None, domain: Optional[str] = None, filename: str = "document") -> dict:
     """
     Process large documents by chunking and extracting from each chunk
@@ -24,9 +24,9 @@ def parse_large_document_chunked(text: str, session_id: str, project_context: Op
     start_time = time.time()
 
     # Get memory context
-    conversation_history = get_conversation_history(session_id, limit=10)
-    session_context = get_session_context(session_id) or {}
-    previous_use_cases = get_session_use_cases(session_id)
+    conversation_history = session_db_manager.get_conversation_history(session_id, limit=10)
+    session_context = session_db_manager.get_session_context(session_id) or {}
+    previous_use_cases = usecase_db_manager.get_use_case_by_session(session_id)
 
     memory_context = build_memory_context(
         conversation_history=conversation_history,
@@ -35,7 +35,7 @@ def parse_large_document_chunked(text: str, session_id: str, project_context: Op
     )
 
     # Chunk the document
-    chunks = main.chunker.chunk_document(text, strategy="auto")
+    chunks = DocumentChunker.chunk_document(text, strategy="auto")
 
     print(f"\n{'='*80}")
     print(f"⚡ CHUNKED EXTRACTION - {len(chunks)} chunks")
@@ -69,7 +69,7 @@ def parse_large_document_chunked(text: str, session_id: str, project_context: Op
         print(f"✅ Chunk {i}: Extracted {len(chunk_use_cases)} use cases\n")
 
     # Merge results from all chunks
-    merged_use_cases = main.chunker.merge_extracted_use_cases(all_chunk_results)
+    merged_use_cases = DocumentChunker.merge_extracted_use_cases(all_chunk_results)
 
     # Validate and store
     all_use_cases = []
@@ -105,7 +105,6 @@ def parse_large_document_chunked(text: str, session_id: str, project_context: Op
             )
 
     # Check for duplicates and store
-    db_path = get_db_path()
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
     c.execute(
@@ -118,7 +117,7 @@ def parse_large_document_chunked(text: str, session_id: str, project_context: Op
         f"{row[0]} {' '.join(json.loads(row[1]))}" for row in existing_rows if row[1]
     ]
     existing_embeddings = (
-        main.embedder.encode(existing_texts, convert_to_tensor=True)
+        embedder.encode(existing_texts, convert_to_tensor=True)
         if existing_texts
         else None
     )
@@ -170,7 +169,7 @@ def parse_large_document_chunked(text: str, session_id: str, project_context: Op
     total_time = time.time() - start_time
 
     # Store response
-    add_conversation_message(
+    session_db_manager.add_conversation_message(
         session_id=session_id,
         role="assistant",
         content=f"Processed {filename}: Extracted {len(merged_use_cases)} use cases from {len(chunks)} chunks in {total_time:.1f}s",

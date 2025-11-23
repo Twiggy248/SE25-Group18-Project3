@@ -102,7 +102,7 @@ ACTION_VERBS = [
     "cache",
 ]
 
-    # Actors that indicate use cases
+# Actors that indicate use cases
 ACTORS = [
     "user",
     "customer",
@@ -127,4 +127,30 @@ ACTORS = [
     "system",
     "application",
     "platform",
+]
+
+SECURITY = [
+    "security",
+    "authentication",
+    "authorization",
+    "encrypt",
+    "validate",
+    "verify",
+    "permission",
+    "access control",
+    "secure",
+    "token",
+    "ssl",
+    "tls",
+    "https",
+    "pci",
+    "compliance",
+    "hash",
+    "salt",
+    "protection",
+    "backup",
+    "recovery",
+    "audit",
+    "log",
+    "monitor",
 ]

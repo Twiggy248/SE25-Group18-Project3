@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse, JSONResponse 
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
-from backend.database.db import get_db_path
+from backend.database.db import db_path
 
 # --- Google OAuth --- 
 CLIENT_ID = os.getenv("CLIENT_ID")
@@ -68,7 +68,7 @@ def auth_callback(code: str):
     name = idinfo.get("name")
     picture = idinfo.get("picture")
 
-    db = sqlite3.connect(get_db_path())
+    db = sqlite3.connect(db_path)
     c = db.cursor()
 
     c.execute("SELECT id FROM users WHERE id = ?", (google_sub, ))
@@ -101,7 +101,7 @@ def auth_me(request: Request):
     if not uid: 
         return JSONResponse({"authenticated": False})
     
-    db = sqlite3.connect(get_db_path())
+    db = sqlite3.connect(db_path)
     c = db.cursor()
 
     c.execute("SELECT id, email, name, picture FROM users WHERE id = ?", (uid,))

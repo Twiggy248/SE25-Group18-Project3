@@ -15,8 +15,7 @@ Extracts text from various document formats: PDF, DOCX, TXT, MD
 
 import io
 import os
-from typing import Optional, Tuple
-
+from typing import Tuple
 from fastapi import HTTPException, UploadFile
 
 

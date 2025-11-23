@@ -2,10 +2,6 @@
 # File: use_case_validator.py
 # Description: Use case validator for ReqEngine - validates use case quality 
 #              and completeness with safe type handling and scoring metrics.
-# Author: Pradyumna Chacham
-# Date: November 2025
-# Copyright (c) 2025 Pradyumna Chacham. All rights reserved.
-# License: MIT License - see LICENSE file in the root directory.
 # -----------------------------------------------------------------------------
 
 """
@@ -13,7 +9,8 @@ Use Case Validator - FIXED VERSION
 Validates use case quality and completeness with safe type handling
 """
 
-from typing import Dict, List, Tuple
+from typing import List, Tuple
+from utilities.key_values import ACTION_VERBS, SECURITY
 
 
 def validate_requirements(use_cases: list, validation_data: list = None) -> list:
@@ -35,11 +32,9 @@ def validate_requirements(use_cases: list, validation_data: list = None) -> list
 
     for use_case in use_cases:
         is_valid, issues = validator.validate(use_case)
-        quality_score = validator.calculate_quality_score(use_case)
         suggestions = validator.get_improvement_suggestions(use_case)
-
-        score = UseCaseValidator.calculate_quality_score(use_case)
-        security_score = UseCaseValidator.calculate_security_score(use_case)
+        score = validator.calculate_quality_score(use_case)
+        security_score = validator.calculate_security_score(use_case)
         completeness = min(len(use_case.get("steps", [])) * 10, 100)
 
         # Calculate combined score
@@ -107,45 +102,7 @@ class UseCaseValidator:
             )
 
         # Check for verb in title
-        action_verbs = [
-            "add",
-            "create",
-            "delete",
-            "update",
-            "search",
-            "view",
-            "manage",
-            "edit",
-            "remove",
-            "submit",
-            "process",
-            "validate",
-            "approve",
-            "reject",
-            "send",
-            "receive",
-            "upload",
-            "download",
-            "export",
-            "import",
-            "configure",
-            "register",
-            "login",
-            "logout",
-            "browse",
-            "filter",
-            "sort",
-            "select",
-            "purchase",
-            "pay",
-            "checkout",
-            "track",
-            "cancel",
-            "place",
-            "review",
-            "verify",
-        ]
-        if not any(verb in title.lower() for verb in action_verbs):
+        if not any(verb in title.lower() for verb in ACTION_VERBS):
             issues.append("Title should contain an action verb")
 
         # Preconditions validation (safe list extraction)
@@ -215,45 +172,7 @@ class UseCaseValidator:
         if len(words) >= 3:
             score += 5
             # Check for action verb
-            action_verbs = [
-                "add",
-                "create",
-                "delete",
-                "update",
-                "search",
-                "view",
-                "manage",
-                "edit",
-                "remove",
-                "submit",
-                "process",
-                "validate",
-                "approve",
-                "reject",
-                "send",
-                "receive",
-                "upload",
-                "download",
-                "export",
-                "import",
-                "configure",
-                "register",
-                "login",
-                "logout",
-                "browse",
-                "filter",
-                "sort",
-                "select",
-                "purchase",
-                "pay",
-                "checkout",
-                "track",
-                "cancel",
-                "place",
-                "review",
-                "verify",
-            ]
-            if any(verb in [w.lower() for w in words] for verb in action_verbs):
+            if any(verb in [w.lower() for w in words] for verb in ACTION_VERBS):
                 score += 5
 
         # Preconditions (15 points)
@@ -301,37 +220,12 @@ class UseCaseValidator:
         score = 60  # Base score
 
         # Check for security-related keywords in all text fields
-        security_keywords = [
-            "security",
-            "authentication",
-            "authorization",
-            "encrypt",
-            "validate",
-            "verify",
-            "permission",
-            "access control",
-            "secure",
-            "token",
-            "ssl",
-            "tls",
-            "https",
-            "pci",
-            "compliance",
-            "hash",
-            "salt",
-            "protection",
-            "backup",
-            "recovery",
-            "audit",
-            "log",
-            "monitor",
-        ]
 
         # Convert use case to string for keyword search
         use_case_text = str(use_case).lower()
 
         # Add points for each security keyword found
-        for keyword in security_keywords:
+        for keyword in SECURITY:
             if keyword in use_case_text:
                 score += 5
 

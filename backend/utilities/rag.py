@@ -2,13 +2,8 @@
 # File: rag.py
 # Description: RAG (Retrieval-Augmented Generation) utilities for ReqEngine -
 #              handles vector store operations and semantic search functionality.
-# Author: Pradyumna Chacham
-# Date: November 2025
-# Copyright (c) 2025 Pradyumna Chacham. All rights reserved.
-# License: MIT License - see LICENSE file in the root directory.
 # -----------------------------------------------------------------------------
 
-import os
 from typing import Dict, List
 
 import nltk
@@ -17,7 +12,6 @@ import nltk
 try:
     import chromadb
     from chromadb.utils import embedding_functions
-    from sentence_transformers import SentenceTransformer
 
     CHROMADB_AVAILABLE = True
 except ImportError:

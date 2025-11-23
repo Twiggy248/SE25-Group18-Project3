@@ -22,7 +22,7 @@ class UseCaseEstimator:
             for split in and_splits:
                 # Check if this split contains an action verb
                 has_action = any(
-                    verb in split for verb in UseCaseEstimator.ACTION_VERBS
+                    verb in split for verb in ACTION_VERBS
                 )
                 if has_action:
                     compound_action_count += 1
@@ -49,7 +49,7 @@ class UseCaseEstimator:
         action_count = 0
         found_actions = set()
 
-        for verb in UseCaseEstimator.ACTION_VERBS:
+        for verb in ACTION_VERBS:
             # Look for verb patterns
             patterns = [
                 rf"\b(?:can|should|must|may|will|shall)\s+{verb}\b",
@@ -70,7 +70,7 @@ class UseCaseEstimator:
         unique_actions = len(found_actions)
         conjunction_action_count = UseCaseEstimator.count_conjunction_actions(text)
         # Count actors mentioned
-        actor_count = sum(1 for actor in UseCaseEstimator.ACTORS if actor in text_lower)
+        actor_count = sum(1 for actor in ACTORS if actor in text_lower)
 
         # Count conjunctions that separate actions ("and", "or")
         conjunction_splits = len(re.findall(r"\b(?:and|or)\b", text_lower))
@@ -124,10 +124,10 @@ class UseCaseEstimator:
         for sentence in sentences:
             sentence_lower = sentence.lower()
             has_action = any(
-                verb in sentence_lower for verb in UseCaseEstimator.ACTION_VERBS
+                verb in sentence_lower for verb in ACTION_VERBS
             )
             has_actor = any(
-                actor in sentence_lower for actor in UseCaseEstimator.ACTORS
+                actor in sentence_lower for actor in ACTORS
             )
             if has_action or has_actor:
                 sentences_with_actions += 1

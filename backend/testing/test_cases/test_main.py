@@ -17,10 +17,12 @@ import torch
 from fastapi import File, UploadFile
 from fastapi.testclient import TestClient
 
-from main import (UseCaseEstimator, app, clean_llm_json,
-                  compute_usecase_embedding, ensure_string_list, flatten_use_case,
-                  generate_fallback_title, generate_session_title,
-                  get_smart_max_use_cases, get_smart_token_budget)
+from main import app
+from utilities.use_case_utilities import UseCaseEstimator
+import utilities.use_case_utilities as usecaseUtil
+import utilities.llm_generation as llmGen
+import utilities.misc as util
+import managers.session_manager as sessionManager
 
 
 @pytest.fixture
@@ -34,12 +36,12 @@ def client():
 
 
 # Test data
-SAMPLE_TEXT = """
-The user should be able to login to the system. 
-After logging in, users can search for products.
-Users can add items to their cart and proceed to checkout.
-Admin users can manage product inventory.
-"""
+SAMPLE_TEXT =   """
+                The user should be able to login to the system. 
+                After logging in, users can search for products.
+                Users can add items to their cart and proceed to checkout.
+                Admin users can manage product inventory.
+                """
 
 SAMPLE_USE_CASE = {
     "title": "User Login",
@@ -116,21 +118,21 @@ class TestUseCaseEstimator:
 class TestSmartMaxUseCases:
     def test_get_smart_max_basic(self):
         """Test basic smart max estimation"""
-        max_cases = get_smart_max_use_cases(SAMPLE_TEXT)
+        max_cases = usecaseUtil.get_smart_max_use_cases(SAMPLE_TEXT)
         assert max_cases >= 3, "Should estimate at least 3 use cases for sample text"
         assert max_cases <= 20, "Should not exceed maximum of 20"
 
     def test_get_smart_max_tiny(self):
         """Test estimation for very small text"""
         text = "User logs in."
-        max_cases = get_smart_max_use_cases(text)
+        max_cases = usecaseUtil.get_smart_max_use_cases(text)
         assert max_cases == 1, "Should estimate 1 use case for tiny text"
         assert max_cases <= 2, "Should limit max for tiny text"
 
     def test_get_smart_max_compound(self):
         """Test estimation with compound actions"""
         text = "User logs in and adds items to cart and updates profile."
-        max_cases = get_smart_max_use_cases(text)
+        max_cases = usecaseUtil.get_smart_max_use_cases(text)
         assert max_cases >= 3, "Should recognize all compound actions"
         assert max_cases <= 5, "Should maintain reasonable upper limit"
 
@@ -138,7 +140,7 @@ class TestSmartMaxUseCases:
 class TestSmartTokenBudget:
     def test_get_smart_token_budget_basic(self):
         """Test token budget calculation"""
-        budget = get_smart_token_budget(SAMPLE_TEXT, 4)
+        budget = usecaseUtil.get_smart_token_budget(SAMPLE_TEXT, 4)
         assert 300 <= budget <= 1200, "Budget should be within reasonable bounds"
         base_tokens = 4 * 120 + 80  # 4 use cases × 120 + overhead
         assert budget == min(
@@ -147,7 +149,7 @@ class TestSmartTokenBudget:
 
     def test_get_smart_token_budget_min(self):
         """Test minimum token budget"""
-        budget = get_smart_token_budget("Short text", 1)
+        budget = usecaseUtil.get_smart_token_budget("Short text", 1)
         assert budget >= 300, "Should not go below minimum budget"
 
 
@@ -160,7 +162,7 @@ class TestHelperFunctions:
             {"key2": None},
             {"key3": True}
         ]```"""
-        cleaned = clean_llm_json(dirty_json)
+        cleaned = llmGen.clean_llm_json(dirty_json)
         parsed = json.loads(cleaned)
         assert isinstance(parsed, list)
         assert len(parsed) == 3
@@ -172,7 +174,7 @@ class TestHelperFunctions:
         md_json = """```
         {"key": "value"}
         ```"""
-        cleaned = clean_llm_json(md_json)
+        cleaned = llmGen.clean_llm_json(md_json)
         parsed = json.loads(cleaned)
         assert parsed["key"] == "value"
 
@@ -180,21 +182,21 @@ class TestHelperFunctions:
         """Test enhanced JSON cleaning with problematic cases"""
         # Test with escape characters
         escaped_json = r'[{"key": \"value\", "nested": \"quotes\"}]'
-        cleaned = clean_llm_json(escaped_json)
+        cleaned = llmGen.clean_llm_json(escaped_json)
         parsed = json.loads(cleaned)
         assert parsed[0]["key"] == "value"
         assert parsed[0]["nested"] == "quotes"
 
         # Test with unmatched brackets
         unmatched_json = '[{"key": "value"'
-        cleaned = clean_llm_json(unmatched_json)
+        cleaned = llmGen.clean_llm_json(unmatched_json)
         parsed = json.loads(cleaned)
         assert isinstance(parsed, list)
         assert parsed[0]["key"] == "value"
 
         # Test with trailing commas
         trailing_json = '[{"key": "value",},]'
-        cleaned = clean_llm_json(trailing_json)
+        cleaned = llmGen.clean_llm_json(trailing_json)
         parsed = json.loads(cleaned)
         assert isinstance(parsed, list)
         assert parsed[0]["key"] == "value"
@@ -207,7 +209,7 @@ class TestHelperFunctions:
             "main_flow": ["step1", "step2"],
             "stakeholders": None,
         }
-        flat = flatten_use_case(nested)
+        flat = usecaseUtil.flatten_use_case(nested)
         assert isinstance(flat["preconditions"], list)
         assert isinstance(flat["main_flow"], list)
         assert isinstance(flat["stakeholders"], list)
@@ -222,7 +224,7 @@ class TestHelperFunctions:
             ([{"key": "value"}], ['{"key": "value"}']),
         ]
         for input_val, expected in tests:
-            result = ensure_string_list(input_val)
+            result = util.ensure_string_list(input_val)
             assert result == expected
 
     @pytest.mark.skip(reason="Temporarily disabled")
@@ -243,7 +245,7 @@ class TestHelperFunctions:
             stakeholders=[]
         )
 
-        embedding = compute_usecase_embedding(use_case)
+        embedding = usecaseUtil.compute_usecase_embedding(use_case)
         assert isinstance(embedding, torch.Tensor)
         assert embedding.shape == torch.Size([3])  # Assuming 3D for this test
 
@@ -258,7 +260,7 @@ class TestHelperFunctions:
 
         # Test with missing fields
         minimal_case = {"title": "Test"}
-        embedding = compute_usecase_embedding(minimal_case)
+        embedding = usecaseUtil.compute_usecase_embedding(minimal_case)
         assert isinstance(embedding, torch.Tensor)
         assert embedding.shape == torch.Size([3])
 
@@ -267,25 +269,25 @@ class TestHelperFunctions:
         # In testing mode, generate_session_title uses fallback method
         # Test document upload
         doc_msg = "Uploaded document: requirements.pdf"
-        title = generate_session_title(doc_msg)
+        title = sessionManager.generate_session_title(doc_msg)
         # In testing mode, it should return a date-based title
         assert "2025-11-08" in title or "Requirements" in title or len(title) > 0
 
         # Test regular text
         req_text = "User should be able to login and manage profile"
-        title = generate_session_title(req_text)
+        title = sessionManager.generate_session_title(req_text)
         assert len(title.split()) >= 2
         assert len(title.split()) <= 10
 
         # Test fallback title generation
         non_ascii_text = "用户应该能够登录系统"  # Non-ASCII text
-        title = generate_fallback_title(non_ascii_text)
+        title = sessionManager.generate_fallback_title(non_ascii_text)
         assert isinstance(title, str)
         assert "Session" in title  # Should contain "Session"
         assert len(title.split()) >= 2  # At least 2 words
 
         # Test ultimate fallback - should return "Requirements Session"
-        title = generate_fallback_title("Empty text")
+        title = sessionManager.generate_fallback_title("Empty text")
         assert title == "Requirements Session"
 
 @pytest.mark.skip(reason="Requires embedder initialization")
@@ -780,7 +782,7 @@ class TestAdditionalEndpoints:
 
     def test_generate_fallback_title(self):
         """Test fallback title generation"""
-        title = generate_fallback_title("User can login to system", max_length=50)
+        title = sessionManager.generate_fallback_title("User can login to system", max_length=50)
         assert isinstance(title, str)
         assert len(title) > 0
 
@@ -793,7 +795,7 @@ class TestAdditionalEndpoints:
             "preconditions": "Single precondition",
             "outcomes": ["Outcome 1"]
         }
-        flat1 = flatten_use_case(use_case1)
+        flat1 = usecaseUtil.flatten_use_case(use_case1)
         assert flat1["title"] == "Test UC"
         assert isinstance(flat1["main_flow"], list)
         assert isinstance(flat1["preconditions"], list)
@@ -803,19 +805,19 @@ class TestAdditionalEndpoints:
             "title": "Test UC 2",
             "main_flow": ["Step A", "Step B"]
         }
-        flat2 = flatten_use_case(use_case2)
+        flat2 = usecaseUtil.flatten_use_case(use_case2)
         assert flat2["main_flow"] == ["Step A", "Step B"]
 
     def test_ensure_string_list_edge_cases(self):
         """Test ensure_string_list with edge cases"""
         # Test with None
-        assert ensure_string_list(None) == []
+        assert util.ensure_string_list(None) == []
         
         # Test with empty string
-        assert ensure_string_list("") == []
+        assert util.ensure_string_list("") == []
         
         # Test with nested lists
-        result = ensure_string_list([["a", "b"], "c"])
+        result = util.ensure_string_list([["a", "b"], "c"])
         assert isinstance(result, list)
         assert all(isinstance(x, str) for x in result)
 
@@ -823,12 +825,12 @@ class TestAdditionalEndpoints:
         """Test clean_llm_json with various inputs"""
         # Test with trailing comma before closing brace
         json_with_comma = '{"key": "value",}'
-        cleaned = clean_llm_json(json_with_comma)
+        cleaned = llmGen.clean_llm_json(json_with_comma)
         assert '",}' not in cleaned
         
         # Test with trailing comma before closing bracket
         json_array_comma = '["item1", "item2",]'
-        cleaned_array = clean_llm_json(json_array_comma)
+        cleaned_array = llmGen.clean_llm_json(json_array_comma)
         assert '",]' not in cleaned_array
 
 
