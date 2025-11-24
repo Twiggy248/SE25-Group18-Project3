@@ -68,6 +68,12 @@ def migrate_db(reset: bool = False):
         except sqlite3.OperationalError: 
             print("Adding user_id column to sessions table...")
             c.execute("ALTER TABLE sessions ADD COLUMN user_id TEXT")
+        
+        try:
+            c.execute("SELECT preferences FROM users LIMIT 1")
+        except sqlite3.OperationalError:
+            print("Adding preferences column to users table...")
+            c.execute("ALTER TABLE users ADD COLUMN preferences TEXT")
 
         # Update existing NULL session_title values
         c.execute(
@@ -185,7 +191,8 @@ def init_db():
             id TEXT PRIMARY KEY, 
             email TEXT UNIQUE,
             name TEXT, 
-            picture TEXT
+            picture TEXT,
+            preferences TEXT
         )
     """
     )
