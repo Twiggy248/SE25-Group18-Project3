@@ -5,8 +5,6 @@
 # Author: Pradyumna Chacham
 #         Caleb Twigg
 # Date: November 2025
-# Copyright (c) 2025 Pradyumna Chacham. All rights reserved.
-# License: MIT License - see LICENSE file in the root directory.
 # -----------------------------------------------------------------------------
 
 import os, torch

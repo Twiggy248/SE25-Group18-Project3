@@ -5,7 +5,7 @@ Contains the Schemas for the Database Models utilized in the backend
 
 
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 class UseCaseSchema(BaseModel):
     title: str
@@ -39,3 +39,9 @@ class RefinementRequest(BaseModel):
 class QueryRequest(BaseModel):
     session_id: str
     question: str
+
+
+class UserPreferences(BaseModel):
+    darkMode: bool
+    stakeholderColorMode: bool
+    stakeholderColors: Dict[str, str]

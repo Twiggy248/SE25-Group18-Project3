@@ -35,6 +35,7 @@ def migrate_db(reset: bool = False):
             """
             CREATE TABLE IF NOT EXISTS sessions (
                 session_id TEXT PRIMARY KEY,
+                user_id TEXT,
                 project_context TEXT,
                 domain TEXT,
                 user_preferences TEXT,
@@ -57,6 +58,12 @@ def migrate_db(reset: bool = False):
         except sqlite3.OperationalError: 
             print("Adding user_id column to sessions table...")
             c.execute("ALTER TABLE sessions ADD COLUMN user_id TEXT")
+
+        try:
+            c.execute("SELECT preferences FROM users LIMIT 1")
+        except sqlite3.OperationalError:
+            print("Adding preferences column to users table...")
+            c.execute("ALTER TABLE users ADD COLUMN preferences TEXT")
 
         # Update existing NULL session_title values
         c.execute(
@@ -108,6 +115,7 @@ def init_db():
         """
         CREATE TABLE IF NOT EXISTS sessions (
             session_id TEXT PRIMARY KEY,
+            user_id TEXT,
             project_context TEXT,
             domain TEXT,
             user_preferences TEXT,
@@ -154,13 +162,14 @@ def init_db():
     # Users Table 
 
     c.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id TEXT PRIMARY KEY, 
-            email TEXT UNIQUE,
-            name TEXT, 
-            picture TEXT
-        )
-        """)
+              CREATE TABLE IF NOT EXISTS users (
+              id TEXT PRIMARY KEY, 
+              email TEXT UNIQUE,
+              name TEXT, 
+              picture TEXT,
+              preferences TEXT
+              )
+              """)
 
     conn.commit()
     conn.close()
