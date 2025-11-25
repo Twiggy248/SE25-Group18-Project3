@@ -1,6 +1,6 @@
 import re
 from typing import Tuple
-from key_values import ACTION_VERBS, ACTORS
+from .key_values import ACTION_VERBS, ACTORS
 from database.models import UseCaseSchema
 import main
 class UseCaseEstimator:
