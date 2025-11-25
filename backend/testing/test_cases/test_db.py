@@ -14,7 +14,7 @@ import sqlite3
 
 import pytest
 
-from database.db import init_db, db_path, migrate_db
+from database.db import init_db, migrate_db, setDatabasePath, getDatabasePath
 
 from database.managers import session_db_manager, usecase_db_manager
 
@@ -24,8 +24,9 @@ def test_db():
     # Create a temporary test database with a unique name
     test_db_path = f"test_requirements_{os.getpid()}.db"
 
-    original_get_db_path = db_path
-    db_path = lambda: test_db_path
+    original_db_path = getDatabasePath()
+
+    setDatabasePath(test_db_path)
 
     # Initialize the test database
     init_db()
@@ -33,7 +34,7 @@ def test_db():
     yield test_db_path
 
     # Restore original function
-    db_path = original_get_db_path
+    setDatabasePath(original_db_path)
 
     # Clean up the test database
 

@@ -173,3 +173,9 @@ def init_db():
 
     conn.commit()
     conn.close()
+
+def setDatabasePath(new_path: str):
+    db_path = new_path
+
+def getDatabasePath() -> str:
+    return db_path
