@@ -105,9 +105,9 @@ def test_conversation_history(test_db):
     # Then get history
     history = session_db_manager.get_conversation_history(session_id)
     assert len(history) == len(messages)
-    
+
     # Message history should be in reverse order (newest first)
-    history = list(reversed(history))
+    # history = list(reversed(history))
 
     # Verify each message matches
     for i, (role, content) in enumerate(messages):

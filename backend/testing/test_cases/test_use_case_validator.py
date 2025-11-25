@@ -91,7 +91,7 @@ class TestUseCaseValidator:
     def test_validate_missing_action_verb(self):
         """Test validation catches titles without action verbs"""
         use_case = {
-            "title": "The Order Thing",
+            "title": "The Blame Game",
             "main_flow": ["step"],
             "preconditions": ["precond"]
         }
