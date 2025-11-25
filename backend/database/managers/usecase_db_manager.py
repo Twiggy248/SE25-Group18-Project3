@@ -1,6 +1,6 @@
 import sqlite3, json
 from typing import List, Dict, Optional
-from database.db import db_path
+from database.db import getDatabasePath
 
 """
 usecase_db_manager.py
@@ -9,7 +9,7 @@ Handles any Database Operations involving Use Cases
 
 def get_use_case_by_session(session_id: str) -> List[Dict]:
     """Get all use cases generated in this session"""
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(getDatabasePath())
     c = conn.cursor()
 
     c.execute(
@@ -43,7 +43,7 @@ def get_use_case_by_session(session_id: str) -> List[Dict]:
 
 def get_use_case_by_id(use_case_id: int) -> Optional[Dict]:
     """Get a specific use case by ID"""
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(getDatabasePath())
     c = conn.cursor()
 
     c.execute(
@@ -76,7 +76,7 @@ def get_use_case_by_id(use_case_id: int) -> Optional[Dict]:
 
 def update_use_case(use_case_id: int, updated_data: Dict) -> bool:
     """Update a use case with new data"""
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(getDatabasePath())
     c = conn.cursor()
 
     # First check if the use case exists

@@ -1,10 +1,10 @@
 import sqlite3, json
-from database.db import db_path
+from database.db import getDatabasePath
 from typing import List, Dict, Optional
 
 def create_session(session_id: str, user_id: str, project_context: str = "", domain: str = "", session_title: str = "New Session"):
     """Create a new session or update existing one"""
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(getDatabasePath())
     c = conn.cursor()
 
     c.execute(
@@ -21,7 +21,7 @@ def create_session(session_id: str, user_id: str, project_context: str = "", dom
 
 def update_session_context(session_id: str, project_context: str = None, domain: str = None, preferences: dict = None, session_title: str = None):
     """Update session context as conversation progresses"""
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(getDatabasePath())
     c = conn.cursor()
 
     updates = []
@@ -52,7 +52,7 @@ def update_session_context(session_id: str, project_context: str = None, domain:
 
 def get_session_title(session_id: str) -> Optional[str]:
     """Get session title"""
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(getDatabasePath())
     c = conn.cursor()
 
     c.execute(
@@ -73,7 +73,7 @@ def get_session_title(session_id: str) -> Optional[str]:
 
 def get_session_context(session_id: str) -> Optional[Dict]:
     """Get accumulated context for a session"""
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(getDatabasePath())
     c = conn.cursor()
 
     c.execute(
@@ -99,7 +99,7 @@ def get_session_context(session_id: str) -> Optional[Dict]:
 
 def add_session_summary(session_id: str, summary: str, key_concepts: List[str]):
     """Add a summary of conversation progress"""
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(getDatabasePath())
     c = conn.cursor()
 
     c.execute(
@@ -115,7 +115,7 @@ def add_session_summary(session_id: str, summary: str, key_concepts: List[str]):
 
 def get_latest_summary(session_id: str) -> Optional[Dict]:
     """Get the most recent summary for a session"""
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(getDatabasePath())
     c = conn.cursor()
 
     c.execute(
@@ -142,7 +142,7 @@ def get_latest_summary(session_id: str) -> Optional[Dict]:
 
 def clean_new_session_titles():
     """Remove 'New Session' titles and update with better defaults"""
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(getDatabasePath())
     c = conn.cursor()
 
     try:
@@ -189,7 +189,7 @@ def clean_new_session_titles():
 
 def add_conversation_message(session_id: str, role: str, content: str, metadata: dict = None):
     """Add a message to conversation history"""
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(getDatabasePath())
     c = conn.cursor()
 
     c.execute(
@@ -213,7 +213,7 @@ def add_conversation_message(session_id: str, role: str, content: str, metadata:
 
 def get_conversation_history(session_id: str, limit: int = 10) -> List[Dict]:
     """Retrieve recent conversation history for a session"""
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(getDatabasePath())
     conn.row_factory = sqlite3.Row  # Enable row factory for named columns
     c = conn.cursor()
 
@@ -243,7 +243,7 @@ def get_conversation_history(session_id: str, limit: int = 10) -> List[Dict]:
     ]
 
 def delete_session_by_id(session_id: str):
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(getDatabasePath())
     c = conn.cursor()
 
     # Delete session data
@@ -256,7 +256,7 @@ def delete_session_by_id(session_id: str):
     conn.close()
 
 def get_user_sessions(user_id: str) -> list:
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(getDatabasePath())
     c = conn.cursor()
 
     c.execute(

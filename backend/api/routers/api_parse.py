@@ -10,7 +10,7 @@ from utilities.rag import build_memory_context
 from use_case.use_case_validator import UseCaseValidator
 from database.models import UseCaseSchema, InputText
 from api.security import require_user
-from database.db import db_path
+from database.db import getDatabasePath
 from managers.session_manager import generate_session_title
 from managers.use_case_manager import get_smart_max_use_cases, extract_use_cases_batch, extract_use_cases_single_stage
 from utilities.use_case_utilities import flatten_use_case, compute_usecase_embedding
@@ -160,7 +160,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
                         "reason": str(e)})
 
         # Check for duplicates
-        conn = sqlite3.connect(db_path)
+        conn = sqlite3.connect(getDatabasePath())
         c = conn.cursor()
         c.execute("SELECT title, main_flow FROM use_cases WHERE session_id = ?", (session_id,))
         existing_rows = c.fetchall()
@@ -192,7 +192,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
                     print(f"🔄 Duplicate detected ({max_sim:.2f}): {uc.title[:50]}")
 
             if not is_duplicate:
-                conn = sqlite3.connect(db_path)
+                conn = sqlite3.connect(getDatabasePath())
                 c = conn.cursor()
                 c.execute(
                     """

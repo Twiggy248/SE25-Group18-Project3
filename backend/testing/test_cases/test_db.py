@@ -63,12 +63,8 @@ def test_create_and_get_session(test_db):
     assert context["user_preferences"] == {}
 
     # Verify session in database has correct title
-    conn = sqlite3.connect(test_db)
-    c = conn.cursor()
-    c.execute("SELECT session_title FROM sessions WHERE session_id = ?", (session_id,))
-    db_title = c.fetchone()[0]
-    conn.close()
-    assert db_title == session_title
+    title_in_db = session_db_manager.get_session_title(session_id)
+    assert title_in_db == session_title
 
 
 def test_update_session_context(test_db):
@@ -96,7 +92,8 @@ def test_update_session_context(test_db):
 
 def test_conversation_history(test_db):
     session_id = "test_session_3"
-    session_db_manager.create_session(session_id)
+    user_id = "test3"
+    session_db_manager.create_session(session_id, user_id)
 
     # Add messages
     messages = [("user", "Hello"), ("system", "Hi there"), ("user", "How are you?")]
@@ -148,7 +145,7 @@ def test_use_case_management(test_db):
             session_id, title, preconditions, main_flow, sub_flows,
             alternate_flows, outcomes, stakeholders
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """,
+        """,
         (
             session_id,
             test_use_case["title"],
@@ -165,7 +162,7 @@ def test_use_case_management(test_db):
     conn.commit()
     conn.close()
 
-    # Test get_session_use_cases
+    # Test get_use_case_by_session
     use_cases = usecase_db_manager.get_use_case_by_session(session_id)
     assert len(use_cases) == 1
     assert use_cases[0]["title"] == test_use_case["title"]
@@ -269,7 +266,8 @@ def test_migrate_db_reset(test_db):
 
     # Create some test data
     session_id = "test_reset_session"
-    session_db_manager.create_session(session_id, None, "Test Project", "Test Domain", "Test Title")
+    user_id = "user_rest"
+    session_db_manager.create_session(session_id, user_id, "Test Project", "Test Domain", "Test Title")
 
     # Verify session exists
     conn = sqlite3.connect(test_db)

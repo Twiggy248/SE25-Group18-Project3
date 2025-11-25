@@ -11,7 +11,7 @@ from fastapi import Request, HTTPException
 
 
 def session_belongs_to_user(session_id: str, user_id: str) -> bool:
-    db = sqlite3.connect(database.get_db_path())
+    db = sqlite3.connect(database.getDatabasePath())
     c = db.cursor()
     c.execute("SELECT 1 FROM sessions WHERE session_id = ? AND user_id = ?", (session_id, user_id))
     row = c.fetchone()
