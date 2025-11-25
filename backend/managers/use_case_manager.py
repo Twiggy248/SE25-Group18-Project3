@@ -2,7 +2,7 @@ import json
 import re
 import time
 from typing import List
-import backend.main as main
+from backend.main import pipe, tokenizer
 
 from use_case.use_case_enrichment import enrich_use_case
 from utilities.use_case_utilities import get_smart_max_use_cases, get_smart_token_budget
@@ -93,7 +93,7 @@ def extract_use_cases_single_stage(text: str, memory_context: str, max_use_cases
         start_time = time.time()
 
         # Generate with conservative settings
-        outputs = main.pipe(
+        outputs = pipe(
             prompt,
             max_new_tokens=max_new_tokens,
             temperature=0.3,  # Increase from 0.1 - less rigid
@@ -101,8 +101,8 @@ def extract_use_cases_single_stage(text: str, memory_context: str, max_use_cases
             repetition_penalty=1.1,  # Reduce from 1.15 - less restrictive
             do_sample=True,
             return_full_text=False,
-            eos_token_id=main.tokenizer.eos_token_id,
-            pad_token_id=main.tokenizer.eos_token_id,
+            eos_token_id=tokenizer.eos_token_id,
+            pad_token_id=tokenizer.eos_token_id,
         )
 
         response = "[" + outputs[0]["generated_text"].strip()
@@ -267,7 +267,7 @@ Extract exactly {batch_count} distinct use cases. Return ONLY a JSON array:
 
         try:
             # Generate with reduced tokens
-            outputs = main.pipe(
+            outputs = pipe(
                 prompt,
                 max_new_tokens=batch_tokens,
                 temperature=0.3,
@@ -275,8 +275,8 @@ Extract exactly {batch_count} distinct use cases. Return ONLY a JSON array:
                 repetition_penalty=1.1,
                 do_sample=True,
                 return_full_text=False,
-                eos_token_id=main.tokenizer.eos_token_id,
-                pad_token_id=main.tokenizer.eos_token_id,
+                eos_token_id=tokenizer.eos_token_id,
+                pad_token_id=tokenizer.eos_token_id,
             )
 
             response = "[" + outputs[0]["generated_text"].strip()

@@ -1,6 +1,6 @@
 import json, sqlite3, time, uuid, torch
-import main
 
+from backend.main import embedder
 from typing import Optional
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Request
 from sentence_transformers import util
@@ -171,7 +171,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
             if row[1]
         ]
         existing_embeddings = (
-            main.embedder.encode(existing_texts, convert_to_tensor=True)
+            embedder.encode(existing_texts, convert_to_tensor=True)
             if existing_texts
             else None
         )

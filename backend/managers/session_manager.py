@@ -1,4 +1,4 @@
-import backend.main as main
+from backend.main import pipe
 import re
 from utilities.key_values import ACTION_VERBS, ACTORS
 
@@ -42,7 +42,7 @@ def generate_session_title(first_user_message: str, max_length: int = 50, use_ll
                     Generate a short, descriptive title (4-7 words):
                     <|eot_id|><|start_header_id|>assistant<|end_header_id|>
                     """
-        outputs = main.pipe(
+        outputs = pipe(
             prompt,
             max_new_tokens=30,
             temperature=0.3,
