@@ -42,10 +42,6 @@ Key Features include:
 - **[Code of Conduct](CODE-OF-CONDUCT.md)** - Community guidelines and behavior standards
 - **[Changelog](docs/CHANGELOG.md)** - Version history and release notes
 
-### 🏗️ Architecture Documentation
-- **[Backend README](backend/README.md)** - FastAPI backend architecture and APIs
-- **[Frontend README](frontend/README.md)** - React frontend components and structure
-
 ---
 
 ## 👥 Stakeholders 
