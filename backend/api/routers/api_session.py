@@ -195,3 +195,21 @@ def clear_session(session_id: str, request:Request):
     session_db_manager.delete_session_by_id(session_id)
 
     return {"message": f"Session {session_id} cleared successfully"}
+
+
+@router.post("/rename")
+def rename_session(data: dict, request: Request):
+    user_id = require_user(request)
+    session_id = data.get("session_id")
+
+    new_title = data.get("new_title")
+
+    if not session_id or not new_title: 
+        raise HTTPException(400, "session_id & new_title required!")
+
+    if not session_belongs_to_user(session_id, user_id):
+        raise HTTPException(403, "Forbidden!!")
+    
+    session_db_manager.update_session_title(session_id, new_title)
+
+    return {"success": True, "session_id": session_id, "new_title": new_title}

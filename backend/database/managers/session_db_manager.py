@@ -71,6 +71,16 @@ def get_session_title(session_id: str) -> Optional[str]:
         return row[0] or "New Session"
     return None
 
+def update_session_title(session_id: str, new_title: str):
+    db = sqlite3.connect(getDatabasePath())
+    c = db.cursor()
+    c.execute(
+        "UPDATE sessions SET session_title = ? WHERE session_id = ?", 
+        (new_title, session_id)
+    )
+    db.commit()
+    db.close()
+
 def get_session_context(session_id: str) -> Optional[Dict]:
     """Get accumulated context for a session"""
     conn = sqlite3.connect(getDatabasePath())
