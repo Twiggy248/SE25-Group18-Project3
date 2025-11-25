@@ -330,47 +330,6 @@ open frontend/coverage/index.html  # Frontend report
 
 ---
 
-## 📡 API Integration
-
-### Core Endpoints
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/parse_use_case_rag/` | POST | Extract use cases from raw text |
-| `/parse_use_case_document/` | POST | Extract use cases from uploaded file |
-| `/session/create` | POST | Create new requirements session |
-| `/session/update` | POST | Update session context |
-| `/sessions/` | GET | List all sessions |
-| `/session/{id}/history` | GET | Get session conversation history |
-| `/session/{id}/export` | GET | Export session data |
-| `/use-case/refine` | POST | Refine specific use case |
-| `/query` | POST | Natural language query against requirements |
-
-### Usage Examples
-
-#### Text-based Extraction
-```python
-import requests
-
-response = requests.post('http://localhost:8000/parse_use_case_rag/', json={
-    "raw_text": "Users must be able to login and search for products",
-    "project_context": "E-commerce Platform",
-    "domain": "Retail"
-})
-```
-
-#### Document Upload
-```python
-files = {'file': open('requirements.pdf', 'rb')}
-data = {
-    'project_context': 'Banking System',
-    'domain': 'Financial Services'
-}
-response = requests.post('http://localhost:8000/parse_use_case_document/', 
-                        files=files, data=data)
-```
-
----
-
 ##  Documentation
 
 ### 📋 Quick Reference
@@ -558,7 +517,6 @@ For questions, support, or collaboration inquiries, reach out to us:
 - **❓ Troubleshooting**: See the Troubleshooting section above
 
 
-
 ---
 
 ## �📖 Citation
@@ -574,9 +532,6 @@ If you use ReqEngine in your research or project, please cite it as:
   note={AI-powered tool for transforming unstructured requirements into structured use cases}
 }
 ```
-## Funding
-
-This project did not receive any specific grant or funding from public, commercial, or not-for-profit agencies.
 ---
 
 ## 📄 License
