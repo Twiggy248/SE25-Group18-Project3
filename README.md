@@ -35,7 +35,7 @@ Key Features include:
 ### 📋 Quick Reference
 - **[Installation Guide](docs/INSTALL_AND_TESTS.md)** - Comprehensive installation and configuration
 - **[API Reference](docs/API.md)** - Complete REST API documentation with examples
-- **[Troubleshooting and Support](docs/TROUBLESHOOTING_AND_SUPPORT)** - Get help with common errors and support resources 
+- **[Troubleshooting and Support](docs/TROUBLESHOOTING_AND_SUPPORT.md)** - Get help with common errors and support resources 
 
 ### 🛠️ Development Resources
 - **[Contributing Guidelines](CONTRIBUTING.md)** - Development workflow and coding standards
@@ -59,7 +59,7 @@ If you use ReqEngine in your research or project, please cite it as:
   title={ReqEngine: Intelligent Requirements Engineering Tool},
   author={ReqEngine Development Team},
   year={2025},
-  url={https://github.com/Pradyumna-Chacham/CSC510-SE-Group17/tree/main/proj2},
+  url={https://github.com/Twiggy248/SE25-Group18-Project3},
   note={AI-powered tool for transforming unstructured requirements into structured use cases}
 }
 ```
