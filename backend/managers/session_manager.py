@@ -1,6 +1,8 @@
-from backend.main import pipe
+from backend.main import getPipe
 import re
 from utilities.key_values import ACTION_VERBS, ACTORS
+
+pipe = getPipe()
 
 # NOTE: Why is max_length a parameter if it is never passed in?
 # NOTE: Why is the use_llm being passed if it is always passed as true by outside functions?

@@ -96,3 +96,7 @@ if not os.getenv("TESTING"):
 else:
     print("Testing mode: Model loading skipped")
     chunker = None
+
+
+def getPipe():
+    return pipe

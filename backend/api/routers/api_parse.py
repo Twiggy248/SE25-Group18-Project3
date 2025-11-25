@@ -1,6 +1,6 @@
 import json, sqlite3, time, uuid, torch
 
-from utilities.tools import embedder
+from utilities.tools import getEmbedder
 from typing import Optional
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Request
 from sentence_transformers import util
@@ -21,6 +21,7 @@ api_parse.py
 Handles any Parsing Use Case API Calls
 """
 
+embedder = getEmbedder()
 
 router = APIRouter(
     prefix="/parse_use_case_",

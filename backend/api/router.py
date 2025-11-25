@@ -2,7 +2,7 @@ from fastapi import Request, HTTPException, APIRouter
 from api.routers import api_session, api_user, api_parse
 from database.models import RefinementRequest, QueryRequest
 from database.managers import usecase_db_manager
-from backend.main import pipe, MODEL_NAME
+from backend.main import getPipe, MODEL_NAME
 import json, re
 from managers import query_manager as query
 from api.security import require_user, session_belongs_to_user
@@ -11,6 +11,8 @@ router = APIRouter()
 router.include_router(api_session.router)
 router.include_router(api_user.router)
 router.include_router(api_parse.router)
+
+pipe = getPipe()
 
 @router.post("/use-case/refine")
 def refine_use_case_endpoint(request: RefinementRequest):

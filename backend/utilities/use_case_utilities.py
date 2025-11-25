@@ -1,8 +1,8 @@
 import re
 from typing import Tuple
-from .key_values import ACTION_VERBS, ACTORS
+from utilities.key_values import ACTION_VERBS, ACTORS
 from database.models import UseCaseSchema
-import main
+from utilities.tools import getEmbedder
 class UseCaseEstimator:
     """Intelligently estimate number of use cases in requirements text"""
 
@@ -301,4 +301,5 @@ def flatten_use_case(data: dict) -> dict:
 def compute_usecase_embedding(use_case: UseCaseSchema):
     """Combine title and main_flow into embedding vector"""
     text = use_case.title + " " + " ".join(use_case.main_flow)
-    return main.embedder.encode(text, convert_to_tensor=True)
+    embedder = getEmbedder()
+    return embedder.encode(text, convert_to_tensor=True)

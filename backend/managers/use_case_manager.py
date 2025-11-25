@@ -2,8 +2,8 @@ import json
 import re
 import time
 from typing import List
-from backend.main import pipe
-from utilities.tools import tokenizer
+from backend.main import getPipe
+from utilities.tools import getTokenizer
 
 from use_case.use_case_enrichment import enrich_use_case
 from utilities.use_case_utilities import get_smart_max_use_cases, get_smart_token_budget
@@ -11,10 +11,13 @@ from utilities.llm_generation import clean_llm_json
 from utilities.misc import ensure_string_list
 from utilities.key_values import ACTION_VERBS, ACTORS
 
+tokenizer = getTokenizer()
+
 """
 use_case_manager.py
 Handles any operations (outside of API or Database) that deal with Use Cases
 """
+pipe = getPipe()
 
 def extract_use_cases_single_stage(text: str, memory_context: str, max_use_cases: int = None) -> List[dict]:
     """
