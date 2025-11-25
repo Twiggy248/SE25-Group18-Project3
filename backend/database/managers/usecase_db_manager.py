@@ -1,6 +1,6 @@
 import sqlite3, json
 from typing import List, Dict, Optional
-from ..db import db_path
+from database.db import db_path
 
 """
 usecase_db_manager.py

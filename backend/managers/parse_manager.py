@@ -8,9 +8,9 @@ from database.models import UseCaseSchema
 from database.db import db_path
 from database.managers import session_db_manager, usecase_db_manager
 from utilities.use_case_utilities import compute_usecase_embedding, flatten_use_case
-from .use_case_manager import extract_use_cases_single_stage
+from managers.use_case_manager import extract_use_cases_single_stage
 from utilities.chunking_strategy import DocumentChunker
-from ..main import embedder
+from main import embedder
 
 
 # NOTE: Why Import project_context or domain if never used?
