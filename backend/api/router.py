@@ -2,7 +2,8 @@ from fastapi import Request, HTTPException, APIRouter
 from api.routers import api_session, api_user, api_parse
 from database.models import RefinementRequest, QueryRequest
 from database.managers import usecase_db_manager
-from backend.main import getPipe, MODEL_NAME
+from backend.main import MODEL_NAME
+from utilities.tools import getPipe
 import json, re
 from managers import query_manager as query
 from api.security import require_user, session_belongs_to_user

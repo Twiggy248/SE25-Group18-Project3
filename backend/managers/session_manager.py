@@ -1,4 +1,4 @@
-from backend.main import getPipe
+from utilities.tools import getPipe
 import re
 from utilities.key_values import ACTION_VERBS, ACTORS
 

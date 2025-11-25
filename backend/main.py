@@ -11,13 +11,13 @@ import os, torch
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from transformers import AutoModelForCausalLM, BitsAndBytesConfig, AutoTokenizer, pipeline
+from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 
 from utilities.chunking_strategy import DocumentChunker
 from database.db import init_db, migrate_db
 from dotenv import load_dotenv
 from api.router import router
-from utilities.tools import initalizeEmbedder, initalizeTokenizer
+from utilities.tools import initalizeEmbedder, initalizeTokenizer, initalizePipe
 
 app = FastAPI()
 load_dotenv()
@@ -86,7 +86,7 @@ if not os.getenv("TESTING"):
         low_cpu_mem_usage=True,
     )
 
-    pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, device_map="auto")
+    initalizePipe(model, tokenizer)
 
     print("Model loaded successfully with 4-bit quantization!")
 
