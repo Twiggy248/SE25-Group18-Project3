@@ -10,7 +10,7 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 
 ### Getting Started
 1. **Fork and clone** the repository
-2. **Set up your development environment** (see [INSTALL.md](INSTALL.md))
+2. **Set up your development environment** (see [Installation Guide](./docs/INSTALL_AND_TESTS.md))
 3. **Create a feature branch** for your work
 4. **Make your changes** following our coding standards
 5. **Test thoroughly** before submitting
