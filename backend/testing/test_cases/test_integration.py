@@ -152,7 +152,7 @@ async def test_end_to_end_requirement_workflow(sample_project_spec):
         assert len(enriched_cases) > 0  # Basic validation that we got results back
 
     # 5. Export Testing
-    with patch("export_utils.export_to_format") as mock_export:
+    with patch("utilities.exports.export_to_format") as mock_export:
         mock_export.return_value = {
             "status": "success",
             "formats": ["JIRA", "PDF", "HTML"],

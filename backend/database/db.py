@@ -175,6 +175,7 @@ def init_db():
     conn.close()
 
 def setDatabasePath(new_path: str):
+    global db_path
     db_path = new_path
 
 def getDatabasePath() -> str:

@@ -94,33 +94,33 @@ def test_update_session_context(test_db):
     assert context["domain"] == new_domain
     assert context["user_preferences"] == new_preferences
 
-    def test_conversation_history(test_db):
-        session_id = "test_session_3"
-        session_db_manager.create_session(session_id)
+def test_conversation_history(test_db):
+    session_id = "test_session_3"
+    session_db_manager.create_session(session_id)
 
-        # Add messages
-        messages = [("user", "Hello"), ("system", "Hi there"), ("user", "How are you?")]
+    # Add messages
+    messages = [("user", "Hello"), ("system", "Hi there"), ("user", "How are you?")]
 
-        # Add all messages first
-        for role, content in messages:
-            session_db_manager.add_conversation_message(session_id, role, content)
+    # Add all messages first
+    for role, content in messages:
+        session_db_manager.add_conversation_message(session_id, role, content)
 
-        # Then get history
-        history = session_db_manager.get_conversation_history(session_id)
-        assert len(history) == len(messages)
+    # Then get history
+    history = session_db_manager.get_conversation_history(session_id)
+    assert len(history) == len(messages)
 
-        # Verify message order and content
-        for i, (role, content) in enumerate(messages):
-            assert history[i]["role"] == role
-            assert (
-                history[i]["content"] == content
-            )  # Message history should be in reverse order (newest first)
-        history = list(reversed(history))
+    # Verify message order and content
+    for i, (role, content) in enumerate(messages):
+        assert history[i]["role"] == role
+        assert (
+            history[i]["content"] == content
+        )  # Message history should be in reverse order (newest first)
+    history = list(reversed(history))
 
-        # Verify each message matches
-        for i, (role, content) in enumerate(messages):
-            assert history[i]["role"] == role
-            assert history[i]["content"] == content
+    # Verify each message matches
+    for i, (role, content) in enumerate(messages):
+        assert history[i]["role"] == role
+        assert history[i]["content"] == content
 
 
 def test_use_case_management(test_db):
@@ -264,31 +264,31 @@ def test_migrate_db_session_title(test_db):
 
     conn.close()
 
-    def test_migrate_db_reset(test_db):
-        """Test database reset functionality"""
+def test_migrate_db_reset(test_db):
+    """Test database reset functionality"""
 
-        # Create some test data
-        session_id = "test_reset_session"
-        session_db_manager.create_session(session_id, "Test Project", "Test Domain", "Test Title")
+    # Create some test data
+    session_id = "test_reset_session"
+    session_db_manager.create_session(session_id, None, "Test Project", "Test Domain", "Test Title")
 
-        # Verify session exists
-        conn = sqlite3.connect(test_db)
-        c = conn.cursor()
-        c.execute("SELECT COUNT(*) FROM sessions")
-        count_before = c.fetchone()[0]
-        conn.close()  # Close connection before reset
-        assert count_before > 0
+    # Verify session exists
+    conn = sqlite3.connect(test_db)
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM sessions")
+    count_before = c.fetchone()[0]
+    conn.close()  # Close connection before reset
+    assert count_before > 0
 
-        # Reset database
-        migrate_db(reset=True)
+    # Reset database
+    migrate_db(reset=True)
 
-        # Verify database is clean with new connection
-        conn = sqlite3.connect(test_db)
-        c = conn.cursor()
-        c.execute("SELECT COUNT(*) FROM sessions")
-        count_after = c.fetchone()[0]
-        conn.close()
-        assert count_after == 0
+    # Verify database is clean with new connection
+    conn = sqlite3.connect(test_db)
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM sessions")
+    count_after = c.fetchone()[0]
+    conn.close()
+    assert count_after == 0
 
 
 def test_update_session_with_title(test_db):
@@ -474,7 +474,7 @@ def test_get_use_case_by_id_with_valid_id(test_db):
     session_db_manager.create_session(session_id, user_id)
     
     # Get existing use cases
-    use_cases = session_db_manager.get_session_use_cases(session_id)
+    use_cases = usecase_db_manager.get_use_case_by_session(session_id)
     if len(use_cases) == 0:
         # No use cases yet is also valid
         result = usecase_db_manager.get_use_case_by_id("nonexistent_id")
