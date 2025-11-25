@@ -5,8 +5,7 @@ from fastapi.responses import FileResponse
 from database.managers import session_db_manager, usecase_db_manager
 from utilities.exports import export_to_docx, export_to_markdown
 from database.models import SessionRequest
-from api.security import require_user
-from security import session_belongs_to_user
+from api.security import require_user, session_belongs_to_user
 
 router = APIRouter(
     prefix="/session",

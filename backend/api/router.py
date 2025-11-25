@@ -1,5 +1,5 @@
 from fastapi import Request, HTTPException, APIRouter
-from .routers import api_session, api_user, api_parse
+from routers import api_session, api_user, api_parse
 from database.models import RefinementRequest, QueryRequest
 from database.managers import usecase_db_manager
 import main, json, re
