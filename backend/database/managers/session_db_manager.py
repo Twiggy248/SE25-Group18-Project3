@@ -1,5 +1,5 @@
 import sqlite3, json
-from db import db_path
+from database.db import db_path
 from typing import List, Dict, Optional
 
 def create_session(session_id: str, user_id: str, project_context: str = "", domain: str = "", session_title: str = "New Session"):
