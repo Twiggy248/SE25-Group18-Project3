@@ -19,98 +19,27 @@
 [![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 [![Linting: ESLint](https://img.shields.io/badge/linting-eslint-4B32C3.svg)](https://eslint.org/)
 ---
-## 🌟 Project Overview
+## 🌟 Project Overview & Key Features 
 
 **ReqEngine** is an intelligent requirements engineering tool built on **FastAPI** that uses a fine-tuned **Large Language Model (LLaMA 3.2 3B Instruct)** to automatically transform unstructured textual requirements into structured, high-quality **Use Case Specifications**. It is engineered for efficiency, accuracy, and reliability across documents of any size.
 
----
-
-## 👥 Intended Users
-
-### 🎯 Primary Users
-- **Requirements Engineers**: Professionals who gather, analyze, and document software requirements
-- **Business Analysts**: Specialists who bridge business needs with technical solutions
-- **Product Managers**: Leaders who define product features and user stories
-- **Software Architects**: Designers who need structured requirements for system design
-
-### 🏢 Target Organizations
-- **Software Development Companies**: Teams building custom applications
-- **Consulting Firms**: Organizations managing multiple client projects
-- **Enterprise IT Departments**: Internal teams developing business applications
-- **Educational Institutions**: Academic projects and research in requirements engineering
-
-### 💼 Use Cases
-- **Legacy System Modernization**: Extract requirements from old documentation
-- **Agile Sprint Planning**: Convert user stories into detailed use cases
-- **Client Requirements Analysis**: Process client documents into structured specifications
-- **Compliance Documentation**: Generate audit-ready requirement documentation
-- **Project Handovers**: Standardize requirements across teams and vendors
-
----
-
-## 🏗️ Project Structure
-
-### Backend (FastAPI + Python)
-```
-backend/
-├── main.py                    # FastAPI application and API endpoints
-├── db.py                      # SQLite database operations
-├── document_parser.py         # Multi-format document processing
-├── chunking_strategy.py       # Intelligent text chunking
-├── rag_utils.py              # RAG and semantic search utilities
-├── use_case_enrichment.py    # LLM-based content enhancement
-├── use_case_validator.py     # Quality validation logic
-├── export_utils.py           # Multi-format export functionality
-└── requirements.txt          # Python dependencies
-```
-
-### Frontend (React + Vite)
-```
-frontend/
-├── src/
-│   ├── components/           # Reusable UI components
-│   ├── pages/               # Application pages/views
-│   ├── api/                 # API client configuration
-│   ├── store/               # Zustand state management
-│   └── utils/               # Utility functions
-├── package.json             # Node.js dependencies
-├── vite.config.js          # Vite build configuration
-├── tailwind.config.cjs     # TailwindCSS styling
-└── eslint.config.js        # ESLint code style rules
-```
-
----
-
-## ✨ Key Features
-
-### 🧠 Intelligent Requirements Processing
-- **Smart Use Case Extraction**: Automatically analyzes input text to estimate the number of distinct use cases
-- **Dynamic Token Budgeting**: Adapts LLM response length based on content complexity
-- **Semantic Duplicate Detection**: Uses Sentence Transformers to identify and prevent duplicate requirements
-- **Multi-format Document Support**: Processes PDF, DOCX, and Markdown files
-
-### 📊 Advanced Analytics
-- **Quality Validation**: Automatically validates structure and completeness of extracted use cases
-- **Interactive Refinement**: Allows users to iteratively improve specific use case components
-- **Natural Language Queries**: RAG-enabled querying against extracted requirements
-- **Session Management**: Persistent storage of project context and conversation history
-
-### 🚀 Export Capabilities
-- **Microsoft Word (.docx)**: Professional specification documents
-- **Markdown (.md)**: Documentation-ready format
+Key Features include: 
+- 🧠 Intelligent Requirements Processing with smart use case extractions, dynamic token budgeting, duplicate detection, and multi-format document support 
+- 📊 Advanced Analytics with quality validation, interactive refinement, natural language queries, and sessions management
+- 🚀 Export Capabilities like Microsoft Word and Markdown
 
 ---
 
 ##  Documentation
 
 ### 📋 Quick Reference
-- **[Setup Guide](docs/SETUP.md)** - Quick setup instructions for development
-- **[Installation Guide](docs/INSTALL.md)** - Comprehensive installation and configuration
+- **[Installation Guide](docs/INSTALL_AND_TESTS.md)** - Comprehensive installation and configuration
 - **[API Reference](docs/API.md)** - Complete REST API documentation with examples
+- **[Troubleshooting and Support](docs/TROUBLESHOOTING_AND_SUPPORT)** - Get help with common errors and support resources 
 
 ### 🛠️ Development Resources
-- **[Contributing Guidelines](docs/CONTRIBUTING.md)** - Development workflow and coding standards
-- **[Code of Conduct](docs/CODE-OF-CONDUCT.md)** - Community guidelines and behavior standards
+- **[Contributing Guidelines](CONTRIBUTING.md)** - Development workflow and coding standards
+- **[Code of Conduct](CODE-OF-CONDUCT.md)** - Community guidelines and behavior standards
 - **[Changelog](docs/CHANGELOG.md)** - Version history and release notes
 
 ### 🏗️ Architecture Documentation
@@ -119,6 +48,12 @@ frontend/
 
 ---
 
+## 👥 Stakeholders 
+
+- 🎯 Primary Users: requirements engineers, business analysts, product managers, and software architects
+- 🏢 Target Organizations: software cevelopment companies, consulting firms, enterprise IT departments, and educational institutions
+
+---
 ## 📖 Citation
 
 If you use ReqEngine in your research or project, please cite it as:
