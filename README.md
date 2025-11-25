@@ -39,7 +39,7 @@ Key Features include:
 
 ### 🛠️ Development Resources
 - **[Contributing Guidelines](CONTRIBUTING.md)** - Development workflow and coding standards
-- **[Code of Conduct](CODE-OF-CONDUCT.md)** - Community guidelines and behavior standards
+- **[Code of Conduct](CODE_OF_CONDUCT.md)** - Community guidelines and behavior standards
 - **[Changelog](docs/CHANGELOG.md)** - Version history and release notes
 
 ---
