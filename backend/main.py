@@ -17,7 +17,7 @@ from utilities.chunking_strategy import DocumentChunker
 from database.db import init_db, migrate_db
 from dotenv import load_dotenv
 from api.router import router
-from utilities.tools import initalizeEmbedder, initalizeTokenizer, initalizePipe
+from utilities.tools import initalizeEmbedder, initalizeTokenizer, initalizePipe, MODEL_NAME
 
 app = FastAPI()
 load_dotenv()
@@ -26,7 +26,6 @@ load_dotenv()
 model = None
 pipe = None
 chunker = DocumentChunker(max_tokens=3000)
-MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"  # Define for tests
 
 # Load in the API Router endpoints
 app.include_router(router)
@@ -59,7 +58,6 @@ except Exception as e:
 
 if not os.getenv("TESTING"):
     # --- Load LLaMA 3.2 3B Instruct ---
-    MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
     token = os.getenv("HF_TOKEN")
 
     embedder = initalizeEmbedder()

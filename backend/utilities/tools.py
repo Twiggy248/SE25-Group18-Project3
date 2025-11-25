@@ -11,6 +11,7 @@ Including the Embedder, Tokenizer, and Pipe
 embedder = None
 tokenizer = None
 pipe = None
+MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
 
 def initalizeEmbedder() -> SentenceTransformer:
     embedder = SentenceTransformer("all-MiniLM-L6-v2")
