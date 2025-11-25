@@ -48,64 +48,6 @@
 
 ---
 
-## 📋 Use Case Examples
-
-### 🏦 **Example 1: E-commerce Platform**
-
-**Input Text:**
-> "The system should allow customers to browse products, add items to their shopping cart, and checkout securely. Customers must be able to create accounts, login, and view their order history. The system should send email confirmations after purchases."
-
-**ReqEngine Output:**
-- **Use Case 1**: Customer Account Registration
-- **Use Case 2**: Customer Login Authentication  
-- **Use Case 3**: Product Catalog Browsing
-- **Use Case 4**: Shopping Cart Management
-- **Use Case 5**: Secure Payment Processing
-- **Use Case 6**: Order History Viewing
-- **Use Case 7**: Email Notification System
-
----
-
-### 🏥 **Example 2: Healthcare Management System**
-
-**Input Document:** *Patient Management Requirements (PDF)*
-> "Healthcare providers need to manage patient records, schedule appointments, and track medical history. The system must ensure HIPAA compliance and allow different access levels for doctors, nurses, and administrative staff."
-
-**ReqEngine Output:**
-```json
-{
-  "id": 1,
-  "title": "Healthcare Provider Manages Patient Records",
-  "preconditions": [
-    "Provider has valid credentials",
-    "Patient exists in system",
-    "HIPAA compliance enabled"
-  ],
-  "main_flow": [
-    "Provider logs into system",
-    "Provider searches for patient",
-    "System displays patient record",
-    "Provider reviews/updates medical information"
-  ],
-  "stakeholders": ["Healthcare Provider", "Patient", "System Administrator"]
-}
-```
-
----
-
-### 💰 **Example 3: Banking Application**
-
-**Input:** *Legacy System Documentation*
-> "Account holders should be able to transfer money between accounts, check balances, and receive transaction alerts. The system must support multiple currencies and comply with financial regulations."
-
-**Generated Use Cases:**
-1. **Account Balance Inquiry** - Real-time balance checking
-2. **Inter-Account Money Transfer** - Secure fund transfers  
-3. **Transaction Alert Management** - SMS/Email notifications
-4. **Multi-Currency Support** - Currency conversion handling
-5. **Regulatory Compliance Reporting** - Audit trail generation
-
----
 ## 🏗️ Project Structure
 
 ### Backend (FastAPI + Python)
@@ -159,74 +101,6 @@ frontend/
 
 ---
 
-
-
-## 🔍 Structured Output Example
-
-When processing a requirement like: "*The user must be able to securely login to their account and search for products using keywords. If an item is out of stock, the system must notify the user.*", ReqEngine separates the compound actions into distinct, structured use cases.
-
-The JSON output will contain an array of objects structured as follows:
-
-```json
-[
-  {
-    "id": 1,
-    "title": "User Logs In To System",
-    "preconditions": [
-      "User has valid credentials"
-    ],
-    "main_flow": [
-      "User opens login screen",
-      "User enters credentials",
-      "System validates credentials",
-      "System authenticates user"
-    ],
-    "sub_flows": [
-      "User can reset password"
-    ],
-    "alternate_flows": [
-      "If invalid credentials: System shows error message"
-    ],
-    "outcomes": [
-      "User is logged in successfully"
-    ],
-    "stakeholders": [
-      "User",
-      "Authentication System"
-    ]
-  },
-  {
-    "id": 2,
-    "title": "User Searches For Products",
-    "preconditions": [
-      "User is logged in",
-      "Product catalog is available"
-    ],
-    "main_flow": [
-      "User navigates to search bar",
-      "User enters keywords",
-      "System returns matching products"
-    ],
-    "sub_flows": [
-      "User can filter and sort results"
-    ],
-    "alternate_flows": [
-      "If no match: System displays 'No results found'",
-      "If item out of stock: System notifies user"
-    ],
-    "outcomes": [
-      "Relevant product list is displayed"
-    ],
-    "stakeholders": [
-      "User",
-      "Inventory System"
-    ]
-  }
-]
-```
-
----
-
 ##  Documentation
 
 ### 📋 Quick Reference
@@ -245,7 +119,7 @@ The JSON output will contain an array of objects structured as follows:
 
 ---
 
-## �📖 Citation
+## 📖 Citation
 
 If you use ReqEngine in your research or project, please cite it as:
 
