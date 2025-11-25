@@ -2,7 +2,7 @@ import json
 import re
 import time
 from typing import List
-import main
+import backend.main as main
 
 from use_case.use_case_enrichment import enrich_use_case
 from utilities.use_case_utilities import get_smart_max_use_cases, get_smart_token_budget

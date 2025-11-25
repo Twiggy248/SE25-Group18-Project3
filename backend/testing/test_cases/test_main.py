@@ -17,7 +17,7 @@ import torch
 from fastapi import File, UploadFile
 from fastapi.testclient import TestClient
 
-from main import app
+from backend.main import app
 from utilities.use_case_utilities import UseCaseEstimator
 import utilities.use_case_utilities as usecaseUtil
 import utilities.llm_generation as llmGen
