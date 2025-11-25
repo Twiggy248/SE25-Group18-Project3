@@ -159,33 +159,7 @@ frontend/
 
 ---
 
-## 💻 Installation and Setup
 
-### Prerequisites
-
-1. **Python 3.9+**
-2. A system with a **GPU** supporting CUDA is **highly recommended** for running the LLaMA 3 3B model, even with quantization.
-
-### Setup Steps
-
-1. **Clone the Repository (Assumed)**
-2. **Install Dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-   *(Note: This includes `torch`, `transformers` with `bitsandbytes`, `fastapi`, `uvicorn`, `python-docx`, `PyPDF2`, and `sentence-transformers`.)*
-3. **Set Hugging Face Token:** The LLaMA 3 model is gated, requiring a valid token as an environment variable:
-   ```bash
-   export HF_TOKEN="your_huggingface_token"
-   ```
-4. **Run the ReqEngine API:**
-   ```bash
-   uvicorn main:app --reload
-   ```
-
-The service will be available at `http://127.0.0.1:8000`.
-
----
 
 ## 🔍 Structured Output Example
 
@@ -250,83 +224,6 @@ The JSON output will contain an array of objects structured as follows:
   }
 ]
 ```
-
----
-
-## 🧪 Testing
-
-### Backend Testing (Python/Pytest)
-
-```bash
-cd backend
-pytest                          # Run all tests
-pytest --cov=. --cov-report=html  # Run with coverage
-pytest -v tests/test_main.py    # Run specific test file
-```
-
-**Test Statistics:**
-- **Total Tests**: 90+ comprehensive test cases
-- **Coverage Target**: 80%+ code coverage
-- **Test Categories**: Unit, Integration, and API tests
-- **Test Files**: 8 test modules covering all major components
-
-**Test Coverage Includes:**
-- API endpoint testing
-- Database operations
-- Document parsing functionality
-- Use case validation logic
-- Integration tests
-
-### Frontend Testing (Vitest)
-
-```bash
-cd frontend
-npm test                        # Run all tests
-npm run test:coverage          # Run with coverage
-npm run test:ui               # Run with UI interface
-```
-
-**Test Statistics:**
-- **Total Tests**: 100+ component and integration tests
-- **Coverage Target**: 80%+ code coverage
-- **Test Categories**: Component, Integration, and User interaction tests
-- **Test Files**: 15+ test files across components and pages
-
-**Test Coverage Includes:**
-- Component unit tests
-- API client testing
-- State management testing
-- User interaction testing
-
-### 📊 Coverage Reporting
-
-[![Backend Coverage](https://codecov.io/gh/Pradyumna-Chacham/CSC510-SE-Group17/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/Pradyumna-Chacham/CSC510-SE-Group17)
-[![Frontend Coverage](https://codecov.io/gh/Pradyumna-Chacham/CSC510-SE-Group17/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/Pradyumna-Chacham/CSC510-SE-Group17)
-
-**Quick Coverage Commands:**
-```bash
-# Backend Coverage (Python)
-cd backend && export TESTING=true && python -m pytest tests/ --cov=. --cov-report=html
-
-# Frontend Coverage (React)
-cd frontend && npm test -- --coverage --run
-
-# View HTML Reports
-open backend/htmlcov/index.html    # Backend report
-open frontend/coverage/index.html  # Frontend report
-```
-
-**Current Coverage Status:**
-- **Backend**: 77% line coverage (82/95 tests passing)
-- **Frontend**: Coverage reports generated (127/150 tests passing) 
-- **Overall**: Comprehensive test coverage across all major components
-- **CI/CD**: Automatic coverage reporting via GitHub Actions → Codecov
-
-**Coverage Tools:**
-- **Backend**: `coverage.py` via `pytest-cov`
-- **Frontend**: `@vitest/coverage-v8`
-- **Reports**: HTML, XML, and terminal output
-- **Integration**: Codecov for trend analysis and PR comments
 
 ---
 
