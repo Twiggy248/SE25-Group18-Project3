@@ -108,21 +108,7 @@ Follow our coding standards and ensure:
 
 #### 3. Test Your Changes
 
-**Backend Testing:**
-```bash
-cd backend
-pytest --cov=. --cov-report=term
-pytest -m unit          # Unit tests only
-pytest -m integration   # Integration tests only
-```
-
-**Frontend Testing:**
-```bash
-cd frontend
-npm run lint           # Check code style
-npm test              # Run all tests
-npm run test:coverage # With coverage report
-```
+See [INSTALL_AND_TESTS.md for testing instructions](./docs/INSTALL_AND_TESTS.md)
 
 #### 4. Commit Your Changes
 ```bash
@@ -147,51 +133,6 @@ git push origin feature/your-feature-name
 # Create pull request on GitHub
 # Fill out the PR template with detailed information
 ```
-  
-
----
-
-## 🏗️ Architecture Guidelines
-
-### Backend Architecture
-- **API Layer**: FastAPI endpoints (`main.py`)
-- **Business Logic**: Use case processing (`use_case_*.py`, `rag_utils.py`)
-- **Data Layer**: Database operations (`db.py`)
-- **Integration Layer**: Document parsing (`document_parser.py`)
-
-### Frontend Architecture
-- **Pages**: Main application views (`Dashboard`, `Extraction`, `Chat`)
-- **Components**: Reusable UI elements (`FileUploader`, `UseCaseCard`)
-- **State**: Zustand store for session management
-- **API**: Client layer for backend communication
-
----
-
-## 🧪 Testing Guidelines
-
-### Backend Testing
-```bash
-cd backend
-pytest                          # Run all tests
-pytest --cov=. --cov-report=html  # Run with coverage
-pytest -m unit                 # Unit tests only
-pytest -m integration          # Integration tests only
-```
-
-### Frontend Testing
-```bash
-cd frontend
-npm test              # Run all tests
-npm run test:coverage # With coverage report
-npm run lint          # Check code style
-```
-
-### Coverage Requirements
-- **Minimum Coverage**: 80% for all new code
-- **Test Types**: Unit tests for functions, integration tests for workflows
-- **Documentation**: All test cases should be self-explanatory
-
-
 
 ## 📋 Pull Request Checklist
 
