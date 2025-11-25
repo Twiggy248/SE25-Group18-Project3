@@ -29,10 +29,6 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then
           pip install -r requirements.txt
-        fi
-        pip install pytest pytest-cov pytest-asyncio
-        pip install torch --index-url https://download.pytorch.org/whl/cpu
-        pip install transformers sentence-transformers fastapi uvicorn python-multipart
     
     - name: Run backend tests with coverage
       working-directory: ./backend

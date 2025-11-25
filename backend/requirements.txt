@@ -4,12 +4,12 @@ uvicorn==0.24.0
 python-multipart==0.0.6
 
 #PyTorch & GPU (install separately)
+torch>=2.9.0
 #Install GPU-enabled PyTorch and CUDA 12.1:
 #pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 #(Or) using Conda:
 #conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
 #bitsandbytes for 4-bit / 8-bit quantization (install after GPU PyTorch):
-#pip install bitsandbytes
 
 bitsandbytes >= 0.48.2
 
@@ -46,4 +46,3 @@ isort>=5.12.0
 pylint>=3.0.0
 
 reportlab>=4.4.5
-torch>=2.9.0
