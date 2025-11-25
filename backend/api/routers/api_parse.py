@@ -1,6 +1,6 @@
 import json, sqlite3, time, uuid, torch
 
-from backend.main import embedder
+from utilities.tools import embedder
 from typing import Optional
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Request
 from sentence_transformers import util

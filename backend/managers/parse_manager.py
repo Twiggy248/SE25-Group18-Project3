@@ -10,7 +10,7 @@ from database.managers import session_db_manager, usecase_db_manager
 from utilities.use_case_utilities import compute_usecase_embedding, flatten_use_case
 from managers.use_case_manager import extract_use_cases_single_stage
 from utilities.chunking_strategy import DocumentChunker
-from backend.main import embedder
+from utilities.tools import embedder
 
 
 # NOTE: Why Import project_context or domain if never used?

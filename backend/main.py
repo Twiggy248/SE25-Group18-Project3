@@ -11,22 +11,20 @@ import os, torch
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sentence_transformers import SentenceTransformer
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig, AutoTokenizer, pipeline
 
 from utilities.chunking_strategy import DocumentChunker
 from database.db import init_db, migrate_db
 from dotenv import load_dotenv
 from api.router import router
+from utilities.tools import initalizeEmbedder, initalizeTokenizer
 
 app = FastAPI()
 load_dotenv()
 
 # Global Values
-tokenizer = None
 model = None
 pipe = None
-embedder = SentenceTransformer("all-MiniLM-L6-v2")
 chunker = DocumentChunker(max_tokens=3000)
 MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"  # Define for tests
 
@@ -64,6 +62,8 @@ if not os.getenv("TESTING"):
     MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
     token = os.getenv("HF_TOKEN")
 
+    embedder = initalizeEmbedder()
+
     print("Loading model with 4-bit quantization...")
 
     # Configure 4-bit quantization for RTX 3050
@@ -74,7 +74,7 @@ if not os.getenv("TESTING"):
         bnb_4bit_compute_dtype=torch.float16,
     )
 
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, token=token)
+    tokenizer = initalizeTokenizer(MODEL_NAME, token)
 
     # Load model with 4-bit quantization
     model = AutoModelForCausalLM.from_pretrained(
@@ -95,5 +95,4 @@ if not os.getenv("TESTING"):
 
 else:
     print("Testing mode: Model loading skipped")
-    embedder = None
     chunker = None
