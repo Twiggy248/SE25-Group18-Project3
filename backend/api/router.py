@@ -1,7 +1,7 @@
 from fastapi import Request, HTTPException, APIRouter
 from routers import api_session, api_user, api_parse
-from backend.database.models import RefinementRequest, QueryRequest
-from backend.database.managers import usecase_db_manager
+from database.models import RefinementRequest, QueryRequest
+from database.managers import usecase_db_manager
 import main, json, re
 import managers.query_manager as query
 from security import require_user, session_belongs_to_user

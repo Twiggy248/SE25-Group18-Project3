@@ -3,12 +3,12 @@ import json, time, sqlite3, torch
 from typing import Optional
 
 from sentence_transformers import util
-from backend.utilities.rag import build_memory_context
+from utilities.rag import build_memory_context
 from use_case.use_case_validator import UseCaseValidator
-from backend.database.models import UseCaseSchema
-from backend.database.db import db_path
-from backend.database.managers import session_db_manager, usecase_db_manager
-from backend.utilities.use_case_utilities import compute_usecase_embedding, flatten_use_case
+from database.models import UseCaseSchema
+from database.db import db_path
+from database.managers import session_db_manager, usecase_db_manager
+from utilities.use_case_utilities import compute_usecase_embedding, flatten_use_case
 from use_case_manager import extract_use_cases_single_stage
 from utilities.chunking_strategy import DocumentChunker
 from main import embedder

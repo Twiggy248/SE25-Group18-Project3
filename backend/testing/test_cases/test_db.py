@@ -14,9 +14,9 @@ import sqlite3
 
 import pytest
 
-from backend.database.db import init_db, db_path
+from database.db import init_db, db_path, migrate_db
 
-from backend.database.managers import session_db_manager, usecase_db_manager
+from database.managers import session_db_manager, usecase_db_manager
 
 
 @pytest.fixture
@@ -220,8 +220,6 @@ def test_update_nonexistent_use_case(test_db):
 
 def test_migrate_db_session_title(test_db):
     """Test database migration for session_title column"""
-    from backend.database.db import migrate_db
-
     conn = sqlite3.connect(test_db)
     c = conn.cursor()
 
@@ -267,7 +265,6 @@ def test_migrate_db_session_title(test_db):
 
     def test_migrate_db_reset(test_db):
         """Test database reset functionality"""
-        from backend.database.db import migrate_db
 
         # Create some test data
         session_id = "test_reset_session"
@@ -318,7 +315,6 @@ def test_update_session_with_title(test_db):
 
 def test_get_session_title(test_db):
     """Test getting session title"""
-    from backend.database.db import get_session_title
     
     session_id = "test_get_title"
     user_id = "test6"
@@ -332,14 +328,13 @@ def test_get_session_title(test_db):
     assert retrieved_title == title
     
     # Test non-existent session
-    none_title = get_session_title("nonexistent")
+    none_title = session_db_manager.get_session_title("nonexistent")
     assert none_title is None
 
 
 @pytest.mark.skip(reason="Function signature changed")
 def test_clean_new_session_titles(test_db):
     """Test cleaning 'New Session' titles"""
-    from backend.database.db import clean_new_session_titles
     
     # Create sessions with and without "New Session" title
     session_db_manager.create_session("session1", session_title="New Session")
@@ -347,13 +342,12 @@ def test_clean_new_session_titles(test_db):
     session_db_manager.create_session("session3", session_title="New Session")
     
     # Clean new session titles
-    clean_new_session_titles()
+    session_db_manager.clean_new_session_titles()
     
     # Verify "New Session" titles were removed
-    from backend.database.db import get_session_title
-    title1 = get_session_title("session1")
-    title2 = get_session_title("session2")
-    title3 = get_session_title("session3")
+    title1 = session_db_manager.get_session_title("session1")
+    title2 = session_db_manager.get_session_title("session2")
+    title3 = session_db_manager.get_session_title("session3")
     
     # New Session titles should be None or empty
     assert title1 is None or title1 == ""

@@ -14,10 +14,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sentence_transformers import SentenceTransformer
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig, AutoTokenizer, pipeline
 
-from backend.utilities.chunking_strategy import DocumentChunker
-from backend.database.db import init_db, migrate_db
+from utilities.chunking_strategy import DocumentChunker
+from database.db import init_db, migrate_db
 from dotenv import load_dotenv
-from backend.api.router import router
+from api.router import router
 
 app = FastAPI()
 load_dotenv()

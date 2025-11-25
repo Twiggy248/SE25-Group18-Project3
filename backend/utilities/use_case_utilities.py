@@ -1,7 +1,7 @@
 import re
 from typing import Tuple
 from key_values import ACTION_VERBS, ACTORS
-from backend.database.models import UseCaseSchema
+from database.models import UseCaseSchema
 import main
 class UseCaseEstimator:
     """Intelligently estimate number of use cases in requirements text"""

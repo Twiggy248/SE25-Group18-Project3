@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import pytest
 
-from backend.utilities.rag import extract_use_cases, process_document, semantic_chunk
+from utilities.rag import extract_use_cases, process_document, semantic_chunk, extract_key_concepts
 
 
 @pytest.fixture
@@ -341,7 +341,6 @@ def test_semantic_chunk_with_sentences():
 
 def test_extract_key_concepts():
     """Test key concept extraction from text"""
-    from backend.utilities.rag import extract_key_concepts
     text = "User authentication system login logout registration password security"
     concepts = extract_key_concepts(text, top_n=5)
     assert isinstance(concepts, list)
