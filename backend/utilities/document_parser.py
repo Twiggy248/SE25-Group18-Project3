@@ -15,8 +15,10 @@ Extracts text from various document formats: PDF, DOCX, TXT, MD
 
 import io
 import os
+import PyPDF2
 from typing import Tuple
 from fastapi import HTTPException, UploadFile
+from docx import Document
 
 
 def parse_document(content: str) -> dict:
@@ -94,13 +96,6 @@ def extract_from_text(content: bytes) -> str:
 
 def extract_from_pdf(content: bytes) -> str:
     """Extract text from PDF files"""
-    try:
-        import PyPDF2
-    except ImportError:
-        raise HTTPException(
-            status_code=500,
-            detail="PDF support not installed. Install with: pip install PyPDF2",
-        )
 
     try:
         pdf_file = io.BytesIO(content)
@@ -138,13 +133,6 @@ def extract_from_pdf(content: bytes) -> str:
 
 def extract_from_docx(content: bytes) -> str:
     """Extract text from DOCX files"""
-    try:
-        from docx import Document
-    except ImportError:
-        raise HTTPException(
-            status_code=500,
-            detail="DOCX support not installed. Install with: pip install python-docx",
-        )
 
     try:
         docx_file = io.BytesIO(content)

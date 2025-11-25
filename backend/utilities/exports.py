@@ -12,6 +12,9 @@ Export use cases to various formats: DOCX, PlantUML, Markdown
 import os
 from datetime import datetime
 from typing import Dict, List, Optional
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Inches, Pt, RGBColor
 
 
 def export_to_docx(
@@ -28,15 +31,6 @@ def export_to_docx(
     Returns:
         Path to generated file
     """
-    try:
-        from docx import Document
-        from docx.enum.text import WD_ALIGN_PARAGRAPH
-        from docx.shared import Inches, Pt, RGBColor
-    except ImportError:
-        raise ImportError(
-            "python-docx is required. Install with: pip install python-docx"
-        )
-
     doc = Document()
 
     # Add title

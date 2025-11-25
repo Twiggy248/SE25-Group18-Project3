@@ -36,16 +36,12 @@ def test_db():
     db_path = original_get_db_path
 
     # Clean up the test database
-    try:
-        import sqlite3
 
-        # Close any remaining connections
-        conn = sqlite3.connect(test_db_path)
-        conn.close()
-        if os.path.exists(test_db_path):
-            os.remove(test_db_path)
-    except Exception as e:
-        print(f"Warning: Could not clean up test database: {e}")
+    # Close any remaining connections
+    conn = sqlite3.connect(test_db_path)
+    conn.close()
+    if os.path.exists(test_db_path):
+        os.remove(test_db_path)
 
 
 def test_create_and_get_session(test_db):
