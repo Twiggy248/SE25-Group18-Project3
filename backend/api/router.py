@@ -2,7 +2,7 @@ from fastapi import Request, HTTPException, APIRouter
 from api.routers import api_session, api_user, api_parse
 from database.models import RefinementRequest, QueryRequest
 from database.managers import usecase_db_manager
-import backend.main as main
+from backend.main import pipe, MODEL_NAME
 import json, re
 from managers import query_manager as query
 from api.security import require_user, session_belongs_to_user
@@ -24,7 +24,7 @@ def refine_use_case_endpoint(request: RefinementRequest):
     prompt = query.refineQueryGeneration(use_case, request.refinement_type)
 
     try:
-        outputs = main.pipe(
+        outputs = pipe(
             prompt,
             max_new_tokens=800,
             temperature=0.4,
@@ -97,7 +97,7 @@ def query_requirements(request: QueryRequest, request_data: Request):
     prompt = query.requirementsQueryGeneration(context, request.question)
 
     try:
-        outputs = main.pipe(
+        outputs = pipe(
             prompt,
             max_new_tokens=400,
             temperature=0.5,
@@ -144,7 +144,7 @@ def health_check():
     """Health check endpoint with system info"""
     return {
         "status": "healthy",
-        "model": main.MODEL_NAME,
+        "model": MODEL_NAME,
         "extraction_method": "smart_single_stage_with_chunking",
         "performance": "Intelligent estimation + dynamic token budgets",
         "features": [
