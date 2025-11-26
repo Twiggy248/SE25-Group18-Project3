@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------
 # File: test_rag_utils.py
-# Description: Test suite for rag_utils.py - tests RAG functionality, vector
+# Description: Test suite for rag.py - tests RAG functionality, vector
 #              store operations, and semantic search capabilities.
 # Author: Pradyumna Chacham
 # Date: November 2025
@@ -8,12 +8,11 @@
 # License: MIT License - see LICENSE file in the root directory.
 # -----------------------------------------------------------------------------
 
-import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
-from rag_utils import extract_use_cases, process_document, semantic_chunk
+from utilities.rag import extract_use_cases, process_document, semantic_chunk, extract_key_concepts
 
 
 @pytest.fixture
@@ -94,7 +93,7 @@ async def test_process_document_extraction(complex_requirements_doc):
     3. Identification of integration points
     4. Performance criteria extraction
     """
-    with patch("rag_utils.get_llm_response") as mock_llm:
+    with patch("utilities.rag.get_llm_response") as mock_llm:
         # Setup mock LLM response with realistic structured output
         mock_llm.return_value = {
             "use_cases": [
@@ -158,7 +157,7 @@ async def test_requirement_quality_analysis(ambiguous_requirements_doc):
     3. Recognition of non-measurable criteria
     4. Validation against IEEE standards
     """
-    with patch("rag_utils.get_llm_response") as mock_llm:
+    with patch("utilities.rag.get_llm_response") as mock_llm:
         mock_llm.return_value = {
             "analysis": {
                 "ambiguous_terms": ["fast", "user-friendly", "good", "strong"],
@@ -199,7 +198,7 @@ async def test_process_document_error_handling():
     Tests error handling in the document processing pipeline.
     This ensures system resilience and proper user feedback.
     """
-    with patch("rag_utils.get_llm_response", side_effect=Exception("LLM Error")):
+    with patch("utilities.rag.get_llm_response", side_effect=Exception("LLM Error")):
         with pytest.raises(Exception) as exc_info:
             await process_document("Test content")
         assert "LLM Error" in str(exc_info.value)
@@ -230,7 +229,7 @@ async def test_process_document_with_complex_requirements():
     - Historical data preservation
     """
 
-    with patch("rag_utils.get_llm_response") as mock_llm:
+    with patch("utilities.rag.get_llm_response") as mock_llm:
         mock_llm.return_value = {
             "use_cases": [
                 {
@@ -281,7 +280,7 @@ async def test_extract_use_cases_with_requirements():
     - Handle 1000+ concurrent searches
     """
 
-    with patch("rag_utils.validate_use_case") as mock_validator:
+    with patch("utilities.rag.validate_use_case") as mock_validator:
         mock_validator.return_value = True
         use_cases = await extract_use_cases(doc_with_reqs)
 
@@ -297,7 +296,7 @@ async def test_process_document_maintains_traceability():
     Tests that processed documents maintain traceability to source requirements.
     This validates our requirement tracing capabilities.
     """
-    with patch("rag_utils.get_llm_response") as mock_llm:
+    with patch("utilities.rag.get_llm_response") as mock_llm:
         mock_llm.return_value = {
             "use_cases": [
                 {
@@ -342,7 +341,6 @@ def test_semantic_chunk_with_sentences():
 
 def test_extract_key_concepts():
     """Test key concept extraction from text"""
-    from rag_utils import extract_key_concepts
     text = "User authentication system login logout registration password security"
     concepts = extract_key_concepts(text, top_n=5)
     assert isinstance(concepts, list)

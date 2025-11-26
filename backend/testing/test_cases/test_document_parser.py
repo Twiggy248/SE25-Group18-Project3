@@ -12,9 +12,14 @@ import os
 from io import BytesIO
 
 import pytest
-from fastapi import HTTPException, UploadFile
+import PyPDF2
+from fastapi import HTTPException
+from reportlab.pdfgen import canvas
 
-from document_parser import (categorize_text_size, extract_from_text,
+from utilities.document_parser import extract_from_pdf, extract_from_docx
+from docx import Document
+
+from utilities.document_parser import (categorize_text_size, extract_from_text,
                              extract_text_from_file, get_text_stats,
                              parse_document, validate_file_size)
 
@@ -130,59 +135,42 @@ def test_extract_text_from_file():
     assert "Error reading file" in str(exc.value.detail)
 
 
-# Optional: Test PDF extraction if PyPDF2 is installed
+# Test PDF extraction
 def test_extract_from_pdf():
-    try:
-        import PyPDF2
-        # Create a simple PDF in memory for testing
-        from reportlab.pdfgen import canvas
+    # Create a simple PDF in memory for testing
+    pdf_buffer = BytesIO()
+    c = canvas.Canvas(pdf_buffer)
+    c.drawString(100, 750, "Test PDF content")
+    c.save()
 
-        from document_parser import extract_from_pdf
+    # Test PDF extraction
+    pdf_content = pdf_buffer.getvalue()
+    result = extract_from_pdf(pdf_content)
+    assert "Test PDF content" in result
 
-        pdf_buffer = BytesIO()
-        c = canvas.Canvas(pdf_buffer)
-        c.drawString(100, 750, "Test PDF content")
-        c.save()
-
-        # Test PDF extraction
-        pdf_content = pdf_buffer.getvalue()
-        result = extract_from_pdf(pdf_content)
-        assert "Test PDF content" in result
-
-        # Test invalid PDF
-        with pytest.raises(HTTPException) as exc:
-            extract_from_pdf(b"invalid pdf content")
-        assert "Error parsing PDF" in str(exc.value.detail)
-
-    except ImportError:
-        pytest.skip("PyPDF2 not installed")
+    # Test invalid PDF
+    with pytest.raises(HTTPException) as exc:
+        extract_from_pdf(b"invalid pdf content")
+    assert "Error parsing PDF" in str(exc.value.detail)
 
 
-# Optional: Test DOCX extraction if python-docx is installed
+# Test DOCX extraction
 def test_extract_from_docx():
-    try:
-        from docx import Document
+    # Create a simple DOCX in memory
+    doc = Document()
+    doc.add_paragraph("Test DOCX content")
+    docx_buffer = BytesIO()
+    doc.save(docx_buffer)
 
-        from document_parser import extract_from_docx
+    # Test DOCX extraction
+    docx_content = docx_buffer.getvalue()
+    result = extract_from_docx(docx_content)
+    assert "Test DOCX content" in result
 
-        # Create a simple DOCX in memory
-        doc = Document()
-        doc.add_paragraph("Test DOCX content")
-        docx_buffer = BytesIO()
-        doc.save(docx_buffer)
-
-        # Test DOCX extraction
-        docx_content = docx_buffer.getvalue()
-        result = extract_from_docx(docx_content)
-        assert "Test DOCX content" in result
-
-        # Test invalid DOCX
-        with pytest.raises(HTTPException) as exc:
-            extract_from_docx(b"invalid docx content")
-        assert "Error parsing DOCX" in str(exc.value.detail)
-
-    except ImportError:
-        pytest.skip("python-docx not installed")
+    # Test invalid DOCX
+    with pytest.raises(HTTPException) as exc:
+        extract_from_docx(b"invalid docx content")
+    assert "Error parsing DOCX" in str(exc.value.detail)
 
 
 def test_parse_document_with_metadata():
@@ -269,7 +257,6 @@ def test_parse_document_large_text():
 
 def test_extract_from_docx_error_handling():
     """Test DOCX extraction error handling"""
-    from document_parser import extract_from_docx
     # Invalid DOCX content
     invalid_content = b"Not a DOCX file"
     with pytest.raises(Exception):
@@ -278,7 +265,6 @@ def test_extract_from_docx_error_handling():
 
 def test_extract_from_pdf_empty():
     """Test PDF extraction with empty/invalid content"""
-    from document_parser import extract_from_pdf
     from fastapi import HTTPException
     invalid_content = b"Not a PDF"
     with pytest.raises(HTTPException):

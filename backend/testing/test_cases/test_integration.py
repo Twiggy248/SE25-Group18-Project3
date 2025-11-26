@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -7,12 +6,12 @@ import pytest_asyncio
 
 pytestmark = pytest.mark.asyncio
 
-from document_parser import parse_document
-from export_utils import export_to_format
+from utilities.document_parser import parse_document
+from utilities.exports import export_to_format
 # Import all required modules
-from rag_utils import extract_use_cases, process_document
-from use_case_enrichment import enrich_use_cases
-from use_case_validator import validate_requirements
+from utilities.rag import extract_use_cases, process_document
+from use_case.use_case_enrichment import enrich_use_cases
+from use_case.use_case_validator import validate_requirements
 
 
 @pytest_asyncio.fixture
@@ -90,7 +89,7 @@ async def test_end_to_end_requirement_workflow(sample_project_spec):
     data consistency throughout the pipeline.
     """
     # 1. Document Upload & Initial Processing
-    with patch("document_parser.parse_document") as mock_parser:
+    with patch("utilities.document_parser.parse_document") as mock_parser:
         mock_parser.return_value = {
             "text": sample_project_spec,
             "metadata": {"format": "text", "version": "1.0"},
@@ -108,7 +107,7 @@ async def test_end_to_end_requirement_workflow(sample_project_spec):
     assert "payment" in " ".join(first_case["steps"]).lower()
 
     # 3. Requirements Validation
-    with patch("use_case_validator.validate_requirements") as mock_validator:
+    with patch("use_case.use_case_validator.validate_requirements") as mock_validator:
         mock_validator.return_value = [
             {
                 "id": "UC1",
@@ -139,7 +138,7 @@ async def test_end_to_end_requirement_workflow(sample_project_spec):
         )
 
     # 4. Semantic Enrichment
-    with patch("use_case_enrichment.enrich_use_cases") as mock_enricher:
+    with patch("use_case.use_case_enrichment.enrich_use_cases") as mock_enricher:
         mock_enricher.return_value = [
             {
                 **validation_results[0],
@@ -153,7 +152,7 @@ async def test_end_to_end_requirement_workflow(sample_project_spec):
         assert len(enriched_cases) > 0  # Basic validation that we got results back
 
     # 5. Export Testing
-    with patch("export_utils.export_to_format") as mock_export:
+    with patch("utilities.exports.export_to_format") as mock_export:
         mock_export.return_value = {
             "status": "success",
             "formats": ["JIRA", "PDF", "HTML"],
@@ -213,7 +212,7 @@ async def test_requirement_quality_validation():
     # Test good requirement
     cases_good = await extract_use_cases(good_requirement)
 
-    with patch("use_case_validator.validate_requirements") as mock_validator:
+    with patch("use_case.use_case_validator.validate_requirements") as mock_validator:
         poor_result = {
             "validation_score": 45,
             "validation_details": {
@@ -292,7 +291,7 @@ async def test_requirement_traceability():
     result = await process_document(project_doc)
     use_cases = await extract_use_cases(result.get("text", project_doc))
 
-    with patch("use_case_enrichment.enrich_use_cases") as mock_enricher:
+    with patch("use_case.use_case_enrichment.enrich_use_cases") as mock_enricher:
         mock_enricher.return_value = [
             {
                 **use_cases[0],
@@ -414,7 +413,7 @@ async def test_document_version_comparison(mock_dependencies):
     original_cases = await extract_use_cases(original_doc)
     updated_cases = await extract_use_cases(updated_doc)
 
-    with patch("use_case_validator.validate_requirements") as mock_validator:
+    with patch("use_case.use_case_validator.validate_requirements") as mock_validator:
         mock_validator.side_effect = [
             [
                 {
@@ -491,7 +490,7 @@ async def test_edge_case_processing(mock_dependencies):
     use_cases = await extract_use_cases(result.get("text", malformed_doc))
 
     # Validate malformed use case
-    with patch("use_case_validator.validate_requirements") as mock_validator:
+    with patch("use_case.use_case_validator.validate_requirements") as mock_validator:
         validation_result = {
             "id": "UC1",
             "title": "Malformed Use Case",
@@ -576,7 +575,7 @@ async def test_export_format_integration(mock_dependencies):
     }
 
     # Test JIRA export
-    with patch("export_utils.export_to_format") as mock_export:
+    with patch("utilities.exports.export_to_format") as mock_export:
         mock_export.return_value = {
             "status": "success",
             "formats": ["JIRA"],
@@ -593,7 +592,7 @@ async def test_export_format_integration(mock_dependencies):
         jira_result = export_to_format([use_case], "jira")
         assert jira_result["status"] == "success"
         assert "issues" in jira_result["data"]  # Test HTML export
-    with patch("export_utils.export_to_format") as mock_export:
+    with patch("utilities.exports.export_to_format") as mock_export:
         mock_export.return_value = {
             "status": "success",
             "format": "html",
@@ -608,7 +607,7 @@ async def test_export_format_integration(mock_dependencies):
         "sections": ["overview", "details", "relationships"],
     }
 
-    with patch("export_utils.export_to_format") as mock_export:
+    with patch("utilities.exports.export_to_format") as mock_export:
         mock_export.return_value = {
             "status": "success",
             "format": "custom",

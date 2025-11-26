@@ -2,10 +2,6 @@
 # File: export_utils.py
 # Description: Export utilities for ReqEngine - exports use cases to various 
 #              formats including DOCX, PlantUML, and Markdown.
-# Author: Pradyumna Chacham
-# Date: November 2025
-# Copyright (c) 2025 Pradyumna Chacham. All rights reserved.
-# License: MIT License - see LICENSE file in the root directory.
 # -----------------------------------------------------------------------------
 
 """
@@ -16,6 +12,9 @@ Export use cases to various formats: DOCX, PlantUML, Markdown
 import os
 from datetime import datetime
 from typing import Dict, List, Optional
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Inches, Pt, RGBColor
 
 
 def export_to_docx(
@@ -32,15 +31,6 @@ def export_to_docx(
     Returns:
         Path to generated file
     """
-    try:
-        from docx import Document
-        from docx.enum.text import WD_ALIGN_PARAGRAPH
-        from docx.shared import Inches, Pt, RGBColor
-    except ImportError:
-        raise ImportError(
-            "python-docx is required. Install with: pip install python-docx"
-        )
-
     doc = Document()
 
     # Add title
@@ -431,6 +421,28 @@ def export_to_format(use_cases: List[Dict], format_type: str) -> Dict:
     else:
         raise ValueError(f"Unsupported format: {format_type}")
 
+def export_to_json(use_cases: List[Dict], session_context: Optional[Dict]) -> Dict:
+    """
+    Export use cases to structured JSON format
+
+    Args:
+        use_cases: List of use cases
+        session_context: Session metadata
+
+    Returns:
+        Structured JSON object
+    """
+    return {
+        "metadata": {
+            "project_context": (
+                session_context.get("project_context", "") if session_context else ""
+            ),
+            "domain": session_context.get("domain", "") if session_context else "",
+            "generated_at": datetime.now().isoformat(),
+            "total_use_cases": len(use_cases),
+        },
+        "use_cases": use_cases,
+    }
 
 def _convert_to_jira_issue(use_case: Dict) -> Dict:
     """Convert use case to JIRA issue format"""
@@ -462,27 +474,3 @@ def _build_jira_description(use_case: Dict) -> str:
             parts.append(f"* {req}")
 
     return "\n".join(parts)
-
-
-def export_to_json(use_cases: List[Dict], session_context: Optional[Dict]) -> Dict:
-    """
-    Export use cases to structured JSON format
-
-    Args:
-        use_cases: List of use cases
-        session_context: Session metadata
-
-    Returns:
-        Structured JSON object
-    """
-    return {
-        "metadata": {
-            "project_context": (
-                session_context.get("project_context", "") if session_context else ""
-            ),
-            "domain": session_context.get("domain", "") if session_context else "",
-            "generated_at": datetime.now().isoformat(),
-            "total_use_cases": len(use_cases),
-        },
-        "use_cases": use_cases,
-    }

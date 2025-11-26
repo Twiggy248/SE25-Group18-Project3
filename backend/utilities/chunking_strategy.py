@@ -2,10 +2,6 @@
 # File: chunking_strategy.py
 # Description: Intelligent chunking strategy for large documents - handles 
 #              documents of any size by splitting into processable chunks.
-# Author: Pradyumna Chacham
-# Date: November 2025
-# Copyright (c) 2025 Pradyumna Chacham. All rights reserved.
-# License: MIT License - see LICENSE file in the root directory.
 # -----------------------------------------------------------------------------
 
 """
@@ -14,7 +10,7 @@ Handles documents of any size by splitting into processable chunks
 """
 
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 
 class DocumentChunker:
