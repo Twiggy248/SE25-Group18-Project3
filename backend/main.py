@@ -17,7 +17,7 @@ from utilities.chunking_strategy import DocumentChunker
 from database.db import init_db, migrate_db
 from dotenv import load_dotenv
 from api.router import router
-from utilities.tools import initalizeEmbedder, initalizeTokenizer, initalizePipe, MODEL_NAME
+from utilities.tools import initalizeEmbedder, initalizeTokenizer, initalizePipe, DEFAULT_MODEL_NAME
 
 app = FastAPI()
 load_dotenv()
@@ -52,11 +52,14 @@ except Exception as e:
     print("Attempting database reset...")
     migrate_db(reset=True)  # Reset and recreate database
 
-# ============================================================================
-# MODEL LOADING - Skip in test environment
-# ============================================================================
+# Check if we should load the model 
+# (must not be in testing mode and Auto_boot should be true)
+testing_mode = os.getenv("TESTING").lower() == "true"
+auto_boot = os.getenv("AUTO_BOOT").lower() == "true"
 
-if not os.getenv("TESTING"):
+load_model = auto_boot and (not testing_mode)
+
+if load_model:
     # --- Load LLaMA 3.2 3B Instruct ---
     token = os.getenv("HF_TOKEN")
 
@@ -72,11 +75,11 @@ if not os.getenv("TESTING"):
         bnb_4bit_compute_dtype=torch.float16,
     )
 
-    tokenizer = initalizeTokenizer(MODEL_NAME, token)
+    tokenizer = initalizeTokenizer(DEFAULT_MODEL_NAME, token)
 
     # Load model with 4-bit quantization
     model = AutoModelForCausalLM.from_pretrained(
-        MODEL_NAME,
+        DEFAULT_MODEL_NAME,
         quantization_config=bnb_config,
         device_map="auto",
         token=token,
@@ -92,9 +95,5 @@ if not os.getenv("TESTING"):
     # Already initialized document chunker
 
 else:
-    print("Testing mode: Model loading skipped")
+    print("Model not loaded (Either Testing Mode or Manual Loading)")
     chunker = None
-
-
-def getPipe():
-    return pipe

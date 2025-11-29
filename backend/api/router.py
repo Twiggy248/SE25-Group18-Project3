@@ -2,7 +2,7 @@ from fastapi import Request, HTTPException, APIRouter
 from api.routers import api_session, api_user, api_parse
 from database.models import RefinementRequest, QueryRequest
 from database.managers import usecase_db_manager
-from utilities.tools import getPipe, MODEL_NAME
+from utilities.tools import getPipe, DEFAULT_MODEL_NAME
 import json, re
 from managers import query_manager as query
 from api.security import require_user, session_belongs_to_user
@@ -146,7 +146,7 @@ def health_check():
     """Health check endpoint with system info"""
     return {
         "status": "healthy",
-        "model": MODEL_NAME,
+        "model": DEFAULT_MODEL_NAME,
         "extraction_method": "smart_single_stage_with_chunking",
         "performance": "Intelligent estimation + dynamic token budgets",
         "features": [

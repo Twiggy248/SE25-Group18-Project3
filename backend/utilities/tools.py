@@ -11,19 +11,21 @@ Including the Embedder, Tokenizer, and Pipe
 embedder = None
 tokenizer = None
 pipe = None
-MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
+DEFAULT_MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
 
 def initalizeEmbedder() -> SentenceTransformer:
+    global embedder
     embedder = SentenceTransformer("all-MiniLM-L6-v2")
     return embedder
 
 def initalizeTokenizer(model_name: str, token: str) -> AutoTokenizer:
+    global tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_name, token=token)
     return tokenizer
 
 def initalizePipe(model, tokenizer):
+    global pipe
     pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, device_map="auto")
-
 
 def getEmbedder():
     return embedder

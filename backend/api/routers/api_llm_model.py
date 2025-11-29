@@ -36,7 +36,7 @@ def useAPI(request: Request):
 
     pass
 
-@router.put("/")
+@router.put("")
 def selectModel(request: Request):
 
     # Check that the type exists and is valid
