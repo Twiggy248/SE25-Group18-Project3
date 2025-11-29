@@ -7,24 +7,21 @@
 # Date: November 2025
 # -----------------------------------------------------------------------------
 
-import os, torch
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 
 from utilities.chunking_strategy import DocumentChunker
 from database.db import init_db, migrate_db
 from dotenv import load_dotenv
 from api.router import router
-from utilities.tools import initalizeEmbedder, initalizeTokenizer, initalizePipe, DEFAULT_MODEL_NAME
-
+from utilities.tools import DEFAULT_MODEL_NAME
+from managers.llm_manager import initModel
 app = FastAPI()
 load_dotenv()
 
 # Global Values
-model = None
-pipe = None
 chunker = DocumentChunker(max_tokens=3000)
 
 # Load in the API Router endpoints
@@ -60,39 +57,7 @@ auto_boot = os.getenv("AUTO_BOOT").lower() == "true"
 load_model = auto_boot and (not testing_mode)
 
 if load_model:
-    # --- Load LLaMA 3.2 3B Instruct ---
-    token = os.getenv("HF_TOKEN")
-
-    embedder = initalizeEmbedder()
-
-    print("Loading model with 4-bit quantization...")
-
-    # Configure 4-bit quantization for RTX 3050
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_use_double_quant=True,
-        bnb_4bit_compute_dtype=torch.float16,
-    )
-
-    tokenizer = initalizeTokenizer(DEFAULT_MODEL_NAME, token)
-
-    # Load model with 4-bit quantization
-    model = AutoModelForCausalLM.from_pretrained(
-        DEFAULT_MODEL_NAME,
-        quantization_config=bnb_config,
-        device_map="auto",
-        token=token,
-        torch_dtype=torch.float16,
-        low_cpu_mem_usage=True,
-    )
-
-    initalizePipe(model, tokenizer)
-
-    print("Model loaded successfully with 4-bit quantization!")
-
-    # Already initialized embedding model for duplicate detection
-    # Already initialized document chunker
+    initModel("hf", DEFAULT_MODEL_NAME)
 
 else:
     print("Model not loaded (Either Testing Mode or Manual Loading)")

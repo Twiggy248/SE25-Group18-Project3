@@ -1,4 +1,5 @@
 import model.api_llm_manager as api_manager
+from api.services import SERVICE_MODELS
 
 def getAvailableModels() -> dict:
     """
@@ -21,6 +22,16 @@ def getAvailableModels() -> dict:
 
 
 # initalize model
+def initModel(service: str, model_name: str):
+    """
+    Given the service and Model, initalize the model
+    """
+    match service:
+        case "hf":
+            funcs = SERVICE_MODELS["hf"]
+            initFunc = funcs[1]
+            initFunc(model_name)
+    pass
 
 
 # query model
