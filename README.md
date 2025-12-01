@@ -29,6 +29,12 @@
 - **[Contributing Guidelines](CONTRIBUTING.md)** - Development workflow and coding standards
 - **[Code of Conduct](CODE_OF_CONDUCT.md)** - Community guidelines and behavior standards
 ---
+### Project Demo 
+Check out ReqEngine in action! 
+
+
+---
+
 ## 🌟 ReqEngine Overview & Key Features 
 
 Intelligent requirements engineering tool built on **FastAPI** using fine-tuned **Large Language Models** to transform unstructured requirements into structured, high-quality **Use Case Specifications**. Engineered for efficiency, accuracy, & reliability across documents of any size.
