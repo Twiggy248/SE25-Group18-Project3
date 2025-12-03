@@ -89,9 +89,7 @@ def extract_from_text(content: bytes) -> str:
         try:
             return content.decode("latin-1")
         except Exception as e:
-            raise HTTPException(
-                status_code=400, detail=f"Error decoding text file: {str(e)}"
-            )
+            raise HTTPException(status_code=400, detail=f"Error decoding text file: {str(e)}")
 
 
 def extract_from_pdf(content: bytes) -> str:
@@ -108,20 +106,14 @@ def extract_from_pdf(content: bytes) -> str:
                 if text.strip():
                     text_parts.append(text)
             except Exception as e:
-                print(
-                    f"⚠️  Warning: Could not extract text from page {page_num + 1}: {e}"
-                )
+                print(f"⚠️  Warning: Could not extract text from page {page_num + 1}: {e}")
                 continue
 
         if not text_parts:
-            raise HTTPException(
-                status_code=400, detail="No text could be extracted from PDF"
-            )
+            raise HTTPException(status_code=400, detail="No text could be extracted from PDF")
 
         full_text = "\n\n".join(text_parts)
-        print(
-            f"✅ Extracted {len(full_text)} characters from {len(pdf_reader.pages)} pages"
-        )
+        print(f"✅ Extracted {len(full_text)} characters from {len(pdf_reader.pages)} pages")
 
         return full_text
 
@@ -153,9 +145,7 @@ def extract_from_docx(content: bytes) -> str:
                     text_parts.append(row_text)
 
         if not text_parts:
-            raise HTTPException(
-                status_code=400, detail="No text could be extracted from DOCX"
-            )
+            raise HTTPException(status_code=400, detail="No text could be extracted from DOCX")
 
         full_text = "\n\n".join(text_parts)
         print(f"✅ Extracted {len(full_text)} characters from DOCX")

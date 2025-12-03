@@ -16,7 +16,7 @@ from utilities.chunking_strategy import DocumentChunker
 from database.db import init_db, migrate_db
 from dotenv import load_dotenv
 from api.router import router
-from utilities.tools import DEFAULT_MODEL_NAME
+from backend.utilities.llm.hf_llm_util import DEFAULT_MODEL_NAME
 from managers.llm_manager import initModel
 app = FastAPI()
 load_dotenv()

@@ -3,8 +3,9 @@ from huggingface_hub import HfApi
 
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 
-from utilities.tools import initalizeEmbedder, initalizeTokenizer, initalizePipe
+from backend.utilities.llm.hf_llm_util import initalizeEmbedder, initalizeTokenizer, initalizePipe
 from utilities.model_details import setModelName, setModelService
+from utilities.llm import hf_llm_util
 
 """
 Hugging Face will be one of the locally hosted model services that can be utilized
@@ -56,5 +57,27 @@ def getModels() -> list[str]:
     return models_list
 
 
-def query(request: str, system_context: str):
-    pass
+def query(request: str, max_new_tokens: int, use_tokenizer: bool) -> list[dict[str, str]]:
+    pipe = hf_llm_util.getPipe()
+    tokenizer = hf_llm_util.getTokenizer()
+
+    if use_tokenizer:
+        outputs = pipe(request,
+                   max_new_tokens=max_new_tokens,
+                   temperature=0.3,  # Increase from 0.1 - less rigid
+                   top_p=0.85,  # Increase from 0.7 - more diverse
+                   repetition_penalty=1.1,  # Reduce from 1.15 - less restrictive
+                   do_sample=True,
+                   return_full_text=False,
+                   eos_token_id=tokenizer.eos_token_id,
+                   pad_token_id=tokenizer.eos_token_id)
+    else:
+        outputs = pipe(request,
+                   max_new_tokens=max_new_tokens,
+                   temperature=0.3,
+                   top_p=0.85,
+                   repetition_penalty=1.1,
+                   do_sample=True,
+                   return_full_text=False)
+        
+    return outputs

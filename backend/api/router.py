@@ -1,10 +1,10 @@
+import json, re
 from fastapi import Request, HTTPException, APIRouter
 from api.routers import api_session, api_user, api_parse
 from database.models import RefinementRequest, QueryRequest
 from database.managers import usecase_db_manager
-from utilities.tools import getPipe, DEFAULT_MODEL_NAME
-import json, re
-from managers import query_manager as query
+from backend.utilities.llm.hf_llm_util import getPipe, DEFAULT_MODEL_NAME
+from backend.utilities.query_generation import refineQueryGeneration, requirementsQueryGeneration
 from api.security import require_user, session_belongs_to_user
 router = APIRouter()
 
@@ -23,7 +23,7 @@ def refine_use_case_endpoint(request: RefinementRequest):
         raise HTTPException(status_code=404, detail="Use case not found")
 
     # Build refinement prompt based on type
-    prompt = query.refineQueryGeneration(use_case, request.refinement_type)
+    prompt = refineQueryGeneration(use_case, request.refinement_type)
 
     try:
         outputs = pipe(
@@ -96,7 +96,7 @@ def query_requirements(request: QueryRequest, request_data: Request):
 
     context = json.dumps(use_cases_for_context, indent=2)
 
-    prompt = query.requirementsQueryGeneration(context, request.question)
+    prompt = requirementsQueryGeneration(context, request.question)
 
     try:
         outputs = pipe(

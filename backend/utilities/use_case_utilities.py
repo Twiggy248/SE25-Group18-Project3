@@ -2,7 +2,7 @@ import re
 from typing import Tuple
 from utilities.key_values import ACTION_VERBS, ACTORS
 from database.models import UseCaseSchema
-from utilities.tools import getEmbedder
+from backend.utilities.llm.hf_llm_util import getEmbedder
 class UseCaseEstimator:
     """Intelligently estimate number of use cases in requirements text"""
 

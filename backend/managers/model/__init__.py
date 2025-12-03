@@ -1,1 +1,0 @@
-# So we can use managers as a module

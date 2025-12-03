@@ -32,3 +32,7 @@ SECURITY = [ "security", "authentication", "authorization", "encrypt",
             "secure", "token", "ssl", "tls", "https", "pci", "compliance", 
             "hash", "salt", "protection", "backup", "recovery", "audit", 
             "log", "monitor"]
+
+SIMPLE_STOPWRODS = {"the", "a", "an", "and", "or", "but", "in", "on", "at",
+                    "to", "for", "of", "with", "by", "from", "is", "are", 
+                    "was", "were", "be", "been", "being"}

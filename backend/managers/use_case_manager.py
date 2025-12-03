@@ -2,21 +2,22 @@ import json
 import re
 import time
 from typing import List
-from utilities.tools import getTokenizer, getPipe
+from backend.utilities.llm.hf_llm_util import getTokenizer, getPipe
 
 from use_case.use_case_enrichment import enrich_use_case
 from utilities.use_case_utilities import get_smart_max_use_cases, get_smart_token_budget
 from utilities.llm_generation import clean_llm_json
 from utilities.misc import ensure_string_list
 from utilities.key_values import ACTION_VERBS, ACTORS
+from utilities.query_generation import uc_batch_extract_queryGen, uc_single_stage_extract_queryGen
 
 tokenizer = getTokenizer()
+pipe = getPipe()
 
 """
 use_case_manager.py
 Handles any operations (outside of API or Database) that deal with Use Cases
 """
-pipe = getPipe()
 
 def extract_use_cases_single_stage(text: str, memory_context: str, max_use_cases: int = None) -> List[dict]:
     """
@@ -34,58 +35,7 @@ def extract_use_cases_single_stage(text: str, memory_context: str, max_use_cases
     max_new_tokens = get_smart_token_budget(text, max_use_cases)
 
     # ✅ IMPROVED PROMPT - Clearer, more explicit
-    prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-
-                You are a requirements analyst. Extract use cases from text and return them as JSON.
-
-                CRITICAL RULES:
-                1. Each action mentioned should be a SEPARATE use case
-                2. DO NOT create duplicate use cases with the same title
-                3. Each use case must be unique and distinct
-                4. Split compound actions: "logs in and adds" → 2 separate use cases
-
-
-                <|eot_id|><|start_header_id|>user<|end_header_id|>
-
-                {memory_context}
-
-                Requirements:
-                {text}
-
-                Extract approximately {max_use_cases} UNIQUE, DISTINCT use cases from the requirements above.
-
-                IMPORTANT: 
-                - "User logs in and adds to cart" → Create 2 separate use cases:
-                1. "User logs in to system"  
-                2. "User adds items to cart"
-                - DO NOT create the same use case twice
-                - Each use case must have a different title
-
-                Return a JSON array where EACH use case has UNIQUE title and purpose:
-                [
-                {{
-                    "title": "User logs in to system",
-                    "preconditions": ["User has valid credentials"],
-                    "main_flow": ["User opens app", "User enters credentials", "System validates", "User is authenticated"],
-                    "sub_flows": ["User can reset password", "User can remember device"],
-                    "alternate_flows": ["If invalid: System shows error", "If locked: System requires unlock"],
-                    "outcomes": ["User is logged in successfully"],
-                    "stakeholders": ["User", "Authentication System"]
-                }},
-                {{
-                    "title": "User adds items to shopping cart",
-                    "preconditions": ["User is logged in", "Products are available"],
-                    "main_flow": ["User browses products", "User selects product", "User clicks add to cart", "System adds item", "Cart is updated"],
-                    "sub_flows": ["User can adjust quantity", "User can view cart"],
-                    "alternate_flows": ["If out of stock: System notifies user", "If cart full: System prompts checkout"],
-                    "outcomes": ["Item added to cart successfully"],
-                    "stakeholders": ["User", "Shopping Cart System", "Inventory System"]
-                }}
-                ]
-
-                <|eot_id|><|start_header_id|>assistant<|end_header_id|>
-
-                ["""
+    prompt = uc_single_stage_extract_queryGen(max_use_cases, memory_context, text)
 
     try:
         print(f"🚀 ROBUST SINGLE-STAGE EXTRACTION")
@@ -234,34 +184,7 @@ def extract_use_cases_batch(text: str, memory_context: str, max_use_cases: int) 
         print(f"{'='*80}")
 
         # Create focused prompt for this batch
-        prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-
-You are a requirements analyst. Extract exactly {batch_count} use cases from the requirements.
-
-<|eot_id|><|start_header_id|>user<|end_header_id|>
-
-{memory_context}
-
-Requirements:
-{text}
-
-Extract exactly {batch_count} distinct use cases. Return ONLY a JSON array:
-
-[
-  {{
-    "title": "Actor performs action on object",
-    "preconditions": ["Precondition 1", "Precondition 2"],
-    "main_flow": ["Step 1", "Step 2", "Step 3", "Step 4"],
-    "sub_flows": ["Optional feature 1", "Optional feature 2"],
-    "alternate_flows": ["Error case 1", "Error case 2"],
-    "outcomes": ["Success result 1", "Success result 2"],
-    "stakeholders": ["Actor", "System"]
-  }}
-]
-
-<|eot_id|><|start_header_id|>assistant<|end_header_id|>
-
-["""
+        prompt = uc_batch_extract_queryGen(batch_count, memory_context, text)
 
         # Calculate token budget for this batch
         batch_tokens = batch_count * 150 + 100  # 150 tokens per use case + overhead

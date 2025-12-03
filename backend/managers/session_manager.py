@@ -1,6 +1,7 @@
-from utilities.tools import getPipe
+from backend.utilities.llm.hf_llm_util import getPipe
 import re
 from utilities.key_values import ACTION_VERBS, ACTORS
+from utilities.query_generation import session_title_queryGen
 
 pipe = getPipe()
 
@@ -36,14 +37,8 @@ def generate_session_title(first_user_message: str, max_length: int = 50, use_ll
 
     # For important views, use LLM
     try:
-        prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-                    You are a requirements analyst. Create a concise session title (4-7 words) that summarizes this requirement text.
-                    <|eot_id|><|start_header_id|>user<|end_header_id|>
-                    Requirements text:
-                    {text[:300]}
-                    Generate a short, descriptive title (4-7 words):
-                    <|eot_id|><|start_header_id|>assistant<|end_header_id|>
-                    """
+        prompt = session_title_queryGen(text[:300])
+        
         outputs = pipe(
             prompt,
             max_new_tokens=30,

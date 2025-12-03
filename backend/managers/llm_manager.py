@@ -1,4 +1,3 @@
-import model.api_llm_manager as api_manager
 from api.services import SERVICE_MODELS
 
 def getAvailableModels() -> dict:
@@ -8,14 +7,13 @@ def getAvailableModels() -> dict:
     """
     all_models = {}
     
-    # Get the API Models
-    api_models = api_manager.getAvailableModels()
-    all_models["api"] = api_models
+    # Get the Models from Available Services
+    for service, funcs in SERVICE_MODELS.items():
+        serviceInit = funcs[0]
+        service_models = serviceInit()
+        all_models[service] = service_models
 
-    # Get the locally hosted Models
-
-
-
+    # Returns the dictionary of all models with is formatted as service: list of model strings
     return all_models
 
 
@@ -35,3 +33,9 @@ def initModel(service: str, model_name: str):
 
 
 # query model
+def makeQuery(request: str) -> str:
+
+    # Send the query to the proper service manager overlord (api or local)
+        # If no llm made, use default local llm
+
+    pass
