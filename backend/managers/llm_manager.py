@@ -1,4 +1,5 @@
-from api.services import SERVICE_MODELS
+from services import SERVICE_MODELS, initDefault
+import services.model_details as service
 
 def getAvailableModels() -> dict:
     """
@@ -17,25 +18,40 @@ def getAvailableModels() -> dict:
     return all_models
 
 
-
-
 # initalize model
 def initModel(service: str, model_name: str):
     """
     Given the service and Model, initalize the model
     """
-    match service:
-        case "hf":
-            funcs = SERVICE_MODELS["hf"]
-            initFunc = funcs[1]
-            initFunc(model_name)
-    pass
+
+    # Check that the service and model_name is passed properly and if not, use the default model
+    if service is None or model_name is None:
+        initDefault()
+
+    # If valid, initialize the model and service
+    else:
+        funcs = SERVICE_MODELS[service]
+        initFunc = funcs[1]
+        initFunc(model_name)
 
 
 # query model
-def makeQuery(request: str) -> str:
+def makeQuery(instructionsStr: str, query: str) -> str:
 
-    # Send the query to the proper service manager overlord (api or local)
-        # If no llm made, use default local llm
+    # Get the current model
+    modelService = service.getModelService()
 
-    pass
+    # If a model hasn't been setup yet, go ahead and get the default one booted up
+    if modelService is None:
+        initModel()
+        modelService = service.getModelService()
+
+    # Make the query based on the service
+    funcs = SERVICE_MODELS[modelService]
+    queryFunc = funcs[2]
+    
+    # Make the query
+    response = queryFunc(instructionsStr, query)
+
+    # Return the query response
+    return response

@@ -1,6 +1,5 @@
-import json
 from openai import OpenAI
-import backend.utilities.model_details as service
+import model_details as service
 
 client = None
 
@@ -24,16 +23,15 @@ def getModels() -> list[str]:
     return models_list
 
 
-def query(request: str, system_context: str):
+def query(instructionsStr: str, query: str) -> dict[str, object]:
     """
     Queries an OpenAI Model given the request and the system context
-    Returns the response
+    Returns the response as a Dict object
     """
-    response = client.chat.completions.create(
+    response = client.responses.create(
         model=service.getModelName(),
-        messages=[
-            {"role": "system", "content": system_context},
-            {"role": "user", "content": request},
-        ]
+        instructions=instructionsStr,
+        input=query
     )
-    return response.choices[0].message.content
+
+    return response.to_dict()

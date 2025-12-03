@@ -4,14 +4,20 @@ from huggingface_hub import HfApi
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 
 from backend.utilities.llm.hf_llm_util import initalizeEmbedder, initalizeTokenizer, initalizePipe
-from utilities.model_details import setModelName, setModelService
+from backend.managers.services.model_details import setModelName, setModelService
 from utilities.llm import hf_llm_util
 
 """
 Hugging Face will be one of the locally hosted model services that can be utilized
 """
+DEFAULT_MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
 
 def initalizeModel(model_name: str):
+
+    # If no model name is passed, just use the default
+    if model_name is None:
+        model_name = DEFAULT_MODEL_NAME
+
     token = os.getenv("HF_TOKEN")
     
     initalizeEmbedder()
@@ -57,7 +63,7 @@ def getModels() -> list[str]:
     return models_list
 
 
-def query(request: str, max_new_tokens: int, use_tokenizer: bool) -> list[dict[str, str]]:
+def query(request: str, max_new_tokens: int, use_tokenizer: bool) -> dict[str, str]:
     pipe = hf_llm_util.getPipe()
     tokenizer = hf_llm_util.getTokenizer()
 
@@ -80,4 +86,4 @@ def query(request: str, max_new_tokens: int, use_tokenizer: bool) -> list[dict[s
                    do_sample=True,
                    return_full_text=False)
         
-    return outputs
+    return outputs[0]

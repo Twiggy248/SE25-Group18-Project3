@@ -7,3 +7,6 @@ SERVICE_MODELS = {
     "openai": [openai_api.getModels, openai_api.initalizeModel, openai_api.query],
     "hf": [hf_llm.getModels, hf_llm.initalizeModel, hf_llm.query]
 }
+
+def initDefault():
+    hf_llm.initalizeModel()
