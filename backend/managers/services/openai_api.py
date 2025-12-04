@@ -1,5 +1,6 @@
 from openai import OpenAI
 import model_details as service
+import os
 
 client: OpenAI
 
@@ -8,8 +9,13 @@ def initalizeModel(model_name: str):
     """
     Boots Up the OpenAI API, and assigns model name for future reference
     """
+    key = None
+    if (os.environ("openai_key") is not None):
+        key = os.environ("openai_key")
+
+
     global client
-    client = OpenAI()
+    client = OpenAI(key)
     service.setModelName(model_name)
     service.setModelService("openai")
 

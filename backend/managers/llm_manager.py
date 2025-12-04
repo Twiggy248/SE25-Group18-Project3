@@ -1,6 +1,35 @@
 from services import SERVICE_MODELS, initDefault
 import services.model_details as service
 
+def status() -> bool:
+    """
+    Checks the current status of the LLM System. If Model Name has been set,
+    the LLM has been initalized.
+    
+    :return: If an LLM has been setup and initalized
+    :rtype: bool
+    """
+
+    if service.getModelName() is None:
+        return False
+    return True
+
+def checkService(service: str) -> bool:
+    """
+    Checks if a service is valid by checking if its in the Service_models array
+    which (should) contain all services integrated into the application
+    
+    :param service: The requested Service to check
+    :type service: str
+    :return: If Service is supported
+    :rtype: bool
+    """
+    try:
+        SERVICE_MODELS[service]
+        return True
+    except:
+        return False
+
 def getAvailableModels() -> dict:
     """
     Consolidates all available Models, both those locally hosted and those through an API
@@ -18,8 +47,7 @@ def getAvailableModels() -> dict:
     return all_models
 
 
-# initalize model
-def initModel(service: str, model_name: str):
+def initModel(service: str, api_key: str, model_name: str):
     """
     Given the service and Model, initalize the model
     """
@@ -34,9 +62,19 @@ def initModel(service: str, model_name: str):
         initFunc = funcs[1]
         initFunc(model_name)
 
-
 # query model
-def makeQuery(instructionsStr: str, query: str) -> str:
+def makeQuery(instructionsStr: str, query: str) -> dict[str, str]:
+    """
+    The Generic Query method used by the project. Pulls the current LLM Service and Model, and queries it as
+    defined in that specific LLM's integration code.
+    
+    :param instructionsStr: The String containing the instructions for the LLM (ex. "You are a chef guiding new students, providing feedback where needed")
+    :type instructionsStr: str
+    :param query: The String containing the query from the user as well as any context (ex. "How do I know if I've overcooked noodles?")
+    :type query: str
+    :return: The dict variable of string:string that the LLM returns
+    :rtype: dict[str, str]
+    """
 
     # Get the current model
     modelService = service.getModelService()

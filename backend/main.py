@@ -16,8 +16,8 @@ from utilities.chunking_strategy import DocumentChunker
 from database.db import init_db, migrate_db
 from dotenv import load_dotenv
 from api.router import router
-from backend.utilities.llm.hf_llm_util import DEFAULT_MODEL_NAME
 from managers.llm_manager import initModel
+from managers.services import preStart
 app = FastAPI()
 load_dotenv()
 
@@ -54,8 +54,10 @@ auto_boot = os.getenv("AUTO_BOOT").lower() == "true"
 
 load_model = auto_boot and (not testing_mode)
 
+# If load model is true, the system will load the default model configuration
 if load_model:
-    initModel("hf", DEFAULT_MODEL_NAME)
-
+    initModel()
+    
 else:
+    preStart()
     chunker = None

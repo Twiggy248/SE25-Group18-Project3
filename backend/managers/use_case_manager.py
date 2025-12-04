@@ -2,7 +2,7 @@ import json
 import re
 import time
 from typing import List
-from backend.utilities.llm.hf_llm_util import getTokenizer, getPipe
+from backend.utilities.llm.hf_llm_util import getPipe
 
 from use_case.use_case_enrichment import enrich_use_case
 from utilities.use_case_utilities import get_smart_max_use_cases, get_smart_token_budget
@@ -11,7 +11,6 @@ from utilities.misc import ensure_string_list
 from utilities.key_values import ACTION_VERBS, ACTORS
 from utilities.query_generation import uc_batch_extract_queryGen, uc_single_stage_extract_queryGen
 
-tokenizer = getTokenizer()
 pipe = getPipe()
 
 """
@@ -47,9 +46,7 @@ def extract_use_cases_single_stage(text: str, memory_context: str, max_use_cases
             top_p=0.85,  # Increase from 0.7 - more diverse
             repetition_penalty=1.1,  # Reduce from 1.15 - less restrictive
             do_sample=True,
-            return_full_text=False,
-            eos_token_id=tokenizer.eos_token_id,
-            pad_token_id=tokenizer.eos_token_id,
+            return_full_text=False
         )
 
         response = "[" + outputs[0]["generated_text"].strip()
@@ -154,9 +151,7 @@ def extract_use_cases_batch(text: str, memory_context: str, max_use_cases: int) 
                 top_p=0.85,
                 repetition_penalty=1.1,
                 do_sample=True,
-                return_full_text=False,
-                eos_token_id=tokenizer.eos_token_id,
-                pad_token_id=tokenizer.eos_token_id,
+                return_full_text=False
             )
 
             response = "[" + outputs[0]["generated_text"].strip()
@@ -320,6 +315,6 @@ def extract_with_smart_fallback(text: str) -> List[dict]:
 
         if len(use_cases) >= 15:
             break
-        
+
     return use_cases
 

@@ -33,4 +33,3 @@ def clean_llm_json(json_str: str) -> str:
         json_str += "]" * (open_brackets - close_brackets)
 
     return json_str
-1

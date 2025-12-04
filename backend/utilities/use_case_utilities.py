@@ -2,15 +2,14 @@ import re
 from typing import Tuple
 from utilities.key_values import ACTION_VERBS, ACTORS
 from database.models import UseCaseSchema
-from backend.utilities.llm.hf_llm_util import getEmbedder
+from managers.services import getEmbedder
 class UseCaseEstimator:
     """Intelligently estimate number of use cases in requirements text"""
 
     @staticmethod
     def count_conjunction_actions(text: str) -> int:
         """
-        🔥 NEW: Detect compound actions split by 'and'
-        Example: "proceeds to checkout and selects payment" = 2 actions
+        Detect compound actions split by 'and'
         """
         text_lower = text.lower()
         compound_action_count = 0
@@ -33,9 +32,7 @@ class UseCaseEstimator:
     def estimate_use_cases(text: str) -> Tuple[int, int, dict]:
         """
         Estimate number of use cases in text
-
-        Returns:
-            (min_estimate, max_estimate, analysis_details)
+        Returns: (min_estimate, max_estimate, analysis_details)
         """
 
         text_lower = text.lower()
@@ -176,7 +173,7 @@ def get_smart_max_use_cases(text: str) -> int:
     unique_actions = details["unique_actions"]
     conjunction_actions = details["conjunction_action_count"]
 
-    # 🔥 FIXED: Prioritize conjunction detection for short compound text
+    # Prioritize conjunction detection for short compound text
     if char_count < 150 and conjunction_actions >= 2:
         smart_max = conjunction_actions
     # For long descriptive text (>2000 chars), be more generous
