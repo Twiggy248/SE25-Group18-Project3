@@ -1,6 +1,6 @@
 
-MODEL_NAME = ""
-MODEL_SERVICE = ""
+MODEL_NAME: str
+MODEL_SERVICE: str
 
 def setModelName(model: str):
     global MODEL_NAME

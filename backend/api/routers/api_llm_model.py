@@ -26,6 +26,9 @@ def getAvailableModelOptions():
 @router.put("/api")
 def useAPI(request: Request):
 
+    # Need a logged in user for the model to use
+    require_user(request)
+
     # Check that the passed API exists and is available
 
 
@@ -38,6 +41,9 @@ def useAPI(request: Request):
 
 @router.put("")
 def selectModel(request: Request):
+    
+    # Need a logged in user to select a model to use
+    require_user(request)
 
     # Check that the type exists and is valid
 

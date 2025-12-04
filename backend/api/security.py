@@ -22,5 +22,5 @@ def session_belongs_to_user(session_id: str, user_id: str) -> bool:
 def require_user(request: Request) -> str:
     uid = request.cookies.get("user_id")
     if not uid: 
-        raise HTTPException(401, "Not authenticated")
+        raise HTTPException(400, "Operation Requires Authenticated User")
     return uid

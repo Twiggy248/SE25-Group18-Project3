@@ -11,6 +11,7 @@ from utilities.llm import hf_llm_util
 Hugging Face will be one of the locally hosted model services that can be utilized
 """
 DEFAULT_MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
+DEFAULT_MAX_NEW_TOKENS = 256
 
 def initalizeModel(model_name: str):
 
@@ -63,27 +64,13 @@ def getModels() -> list[str]:
     return models_list
 
 
-def query(request: str, max_new_tokens: int, use_tokenizer: bool) -> dict[str, str]:
+def query(instruction: str, query: str, max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS) -> dict[str, str]:
     pipe = hf_llm_util.getPipe()
-    tokenizer = hf_llm_util.getTokenizer()
 
-    if use_tokenizer:
-        outputs = pipe(request,
-                   max_new_tokens=max_new_tokens,
-                   temperature=0.3,  # Increase from 0.1 - less rigid
-                   top_p=0.85,  # Increase from 0.7 - more diverse
-                   repetition_penalty=1.1,  # Reduce from 1.15 - less restrictive
-                   do_sample=True,
-                   return_full_text=False,
-                   eos_token_id=tokenizer.eos_token_id,
-                   pad_token_id=tokenizer.eos_token_id)
-    else:
-        outputs = pipe(request,
-                   max_new_tokens=max_new_tokens,
-                   temperature=0.3,
-                   top_p=0.85,
-                   repetition_penalty=1.1,
-                   do_sample=True,
-                   return_full_text=False)
+    # Hugging face uses one string for a query
+    request = f"{instruction}\n\nUser:\n{query}\n\nAssistant:"
+
+    # Make the query
+    outputs = pipe(request, max_new_tokens=max_new_tokens)
         
     return outputs[0]
