@@ -56,7 +56,7 @@ def generate_session_title(first_user_message: str, max_length: int = 50, use_ll
             return title
 
     except Exception as e:
-        print(f"⚠️  LLM title generation failed: {e}")
+        print(f"LLM title generation failed: {e}")
 
     return generate_fallback_title(text, max_length)
 

@@ -23,9 +23,7 @@ except ImportError:
 try:
     nltk.data.find("tokenizers/punkt")
 except LookupError:
-    print("📥 Downloading NLTK punkt tokenizer...")
     nltk.download("punkt")
-    print("✅ NLTK punkt tokenizer downloaded")
 
 
 # --- Semantic chunking with NLTK ---
@@ -49,15 +47,8 @@ def semantic_chunk(text: str, chunk_size: int = 15, overlap: int = 5) -> List[st
 
     total_sentences = len(sentences)
 
-    print(f"\n📊 CHUNKING DEBUG:")
-    print(f"   Total characters: {len(text):,}")
-    print(f"   Total sentences detected: {total_sentences}")
-    print(f"   Chunk size: {chunk_size} sentences")
-    print(f"   Overlap: {overlap} sentences")
-
     # If text is short enough, return as single chunk
     if total_sentences <= chunk_size:
-        print(f"   → Text has {total_sentences} sentences, using 1 chunk\n")
         return [text]
 
     chunks = []
@@ -72,17 +63,12 @@ def semantic_chunk(text: str, chunk_size: int = 15, overlap: int = 5) -> List[st
         if chunk:
             chunks.append(chunk)
             chunk_num += 1
-            print(
-                f"   Chunk {chunk_num}: sentences {start+1}-{end} ({len(chunk):,} chars)"
-            )
 
         start += step
 
         # Safety check: prevent infinite loop
         if start >= total_sentences:
             break
-
-    print(f"   → Created {len(chunks)} chunks\n")
 
     return chunks
 

@@ -1,7 +1,7 @@
 from openai import OpenAI
 import model_details as service
 
-client = None
+client: OpenAI
 
 # Initalize OpenAI model
 def initalizeModel(model_name: str):

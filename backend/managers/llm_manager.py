@@ -10,8 +10,8 @@ def getAvailableModels() -> dict:
     
     # Get the Models from Available Services
     for service, funcs in SERVICE_MODELS.items():
-        serviceInit = funcs[0]
-        service_models = serviceInit()
+        getServiceModels = funcs[0]
+        service_models = getServiceModels()
         all_models[service] = service_models
 
     # Returns the dictionary of all models with is formatted as service: list of model strings

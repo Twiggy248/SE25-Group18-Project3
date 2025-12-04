@@ -20,7 +20,6 @@ def migrate_db(reset: bool = False):
     if reset:
         try:
             os.remove(db_path)
-            print(f"Removed existing database: {db_path}")
         except FileNotFoundError:
             pass
         init_db()  # Recreate tables
@@ -49,20 +48,17 @@ def migrate_db(reset: bool = False):
         try:
             c.execute("SELECT session_title FROM sessions LIMIT 1")
         except sqlite3.OperationalError:
-            print("Adding session_title column to sessions table...")
             c.execute("ALTER TABLE sessions ADD COLUMN session_title TEXT")
 
         # Check if user_id column exists 
         try: 
             c.execute("SELECT user_id FROM sessions LIMIT 1")
         except sqlite3.OperationalError: 
-            print("Adding user_id column to sessions table...")
             c.execute("ALTER TABLE sessions ADD COLUMN user_id TEXT")
 
         try:
             c.execute("SELECT preferences FROM users LIMIT 1")
         except sqlite3.OperationalError:
-            print("Adding preferences column to users table...")
             c.execute("ALTER TABLE users ADD COLUMN preferences TEXT")
 
         # Update existing NULL session_title values
@@ -74,10 +70,8 @@ def migrate_db(reset: bool = False):
             """)
 
         conn.commit()
-        print("Database migration completed successfully")
 
     except Exception as e:
-        print(f"Migration error: {str(e)}")
         conn.rollback()
     finally:
         conn.close()

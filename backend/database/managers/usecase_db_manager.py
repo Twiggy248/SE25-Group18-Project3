@@ -116,5 +116,4 @@ def update_use_case(use_case_id: int, updated_data: Dict) -> bool:
         return c.rowcount > 0
     except Exception as e:
         conn.close()
-        print(f"Error updating use case: {e}")
         return False

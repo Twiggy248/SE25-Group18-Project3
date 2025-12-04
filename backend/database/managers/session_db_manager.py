@@ -188,10 +188,8 @@ def clean_new_session_titles():
             )
 
         conn.commit()
-        print(f"Updated {len(sessions)} session titles")
         return len(sessions)
     except Exception as e:
-        print(f"Error cleaning session titles: {e}")
         conn.rollback()
         return 0
     finally:

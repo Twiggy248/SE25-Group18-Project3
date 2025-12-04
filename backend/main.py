@@ -45,8 +45,6 @@ try:
     init_db()  # Initialize database tables
     migrate_db()  # Add new columns if needed
 except Exception as e:
-    print(f"Database initialization error: {str(e)}")
-    print("Attempting database reset...")
     migrate_db(reset=True)  # Reset and recreate database
 
 # Check if we should load the model 
@@ -60,5 +58,4 @@ if load_model:
     initModel("hf", DEFAULT_MODEL_NAME)
 
 else:
-    print("Model not loaded (Either Testing Mode or Manual Loading)")
     chunker = None
