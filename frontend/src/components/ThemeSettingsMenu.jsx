@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { toast } from 'react-toastify';
 
-// Color palette options
+/**
+ * Color palette options available for actors
+ */
 const COLOR_OPTIONS = [
   { name: 'Blue', value: 'blue', color: '#3b82f6' },
   { name: 'Purple', value: 'purple', color: '#a855f7' },
@@ -16,6 +18,9 @@ const COLOR_OPTIONS = [
   { name: 'Gray', value: 'gray', color: '#6b7280' }
 ];
 
+/**
+ * Predefined list of actor types for use case coloring
+ */
 const ACTORS = [
   "user", "customer", "admin", "administrator", "manager", "employee",
   "staff", "member", "visitor", "guest", "buyer", "seller", "vendor",
@@ -23,6 +28,13 @@ const ACTORS = [
   "nurse", "system", "application", "platform"
 ];
 
+/**
+ * ColorPicker component to select a color for a given actor
+ * @param {string} currentColor - Currently selected color
+ * @param {function} onSelectColor - Callback when a color is selected
+ * @param {string} actorName - Name of the actor being edited
+ * @param {function} onClose - Callback to close the color picker
+ */
 const ColorPicker = ({ currentColor, onSelectColor, actorName, onClose }) => {
   const pickerRef = useRef(null);
 
@@ -71,7 +83,9 @@ const ColorPicker = ({ currentColor, onSelectColor, actorName, onClose }) => {
   );
 };
 
-// Quick Model Selector Component (for General tab)
+/**
+ * QuickModelSelector component for rapid switching of AI models
+ */
 const QuickModelSelector = () => {
   const [models, setModels] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -80,6 +94,9 @@ const QuickModelSelector = () => {
     fetchCurrentModel();
   }, []);
 
+  /**
+   * Fetch currently active model and available models
+   */
   const fetchCurrentModel = async () => {
     try {
       const response = await fetch('http://localhost:8000/models', {
@@ -95,6 +112,11 @@ const QuickModelSelector = () => {
     }
   };
 
+  /**
+   * Switch model quickly
+   * @param {string} type - Model type ('local' or 'api')
+   * @param {string} model - Model option to activate
+   */
   const handleQuickSwitch = async (type, model) => {
     setLoading(true);
     try {
@@ -184,7 +206,9 @@ const QuickModelSelector = () => {
   );
 };
 
-// Model Settings Component (inline)
+/**
+ * ModelSettingsPanel component for advanced model selection and API setup
+ */
 const ModelSettingsPanel = () => {
   const [models, setModels] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -198,6 +222,9 @@ const ModelSettingsPanel = () => {
     fetchAvailableModels();
   }, []);
 
+  /**
+   * Fetch available models and set current selection
+   */
   const fetchAvailableModels = async () => {
     try {
       const response = await fetch('http://localhost:8000/models', {
@@ -224,6 +251,9 @@ const ModelSettingsPanel = () => {
     }
   };
 
+  /**
+   * Setup API credentials for the selected API service
+   */
   const handleSetupAPI = async () => {
     if (!selectedAPIService || !apiKey) {
       toast.error('Please select an API service and enter your API key');
@@ -262,6 +292,9 @@ const ModelSettingsPanel = () => {
     }
   };
 
+  /**
+   * Select and activate a model
+   */
   const handleSelectModel = async () => {
     if (!selectedModel) {
       toast.error('Please select a model');
@@ -303,6 +336,9 @@ const ModelSettingsPanel = () => {
     }
   };
 
+  /**
+   * Deactivate currently active model
+   */
   const handleDeactivateModel = async () => {
     setLoading(true);
     try {
