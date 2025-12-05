@@ -49,7 +49,7 @@ def getAvailableModels() -> dict:
     return all_models
 
 
-def initModel(service: str, api_key: str, model_name: str):
+def initModel(service: str = None, api_key: str = None, model_name: str = None):
     """
     Given the service and Model, initalize the model
     """

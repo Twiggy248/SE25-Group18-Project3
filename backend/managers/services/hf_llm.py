@@ -12,7 +12,7 @@ Hugging Face will be one of the locally hosted model services that can be utiliz
 """
 DEFAULT_MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
 
-def initalizeModel(model_name: str):
+def initalizeModel(model_name: str = None):
 
     # If no model name is passed, just use the default
     if model_name is None:
