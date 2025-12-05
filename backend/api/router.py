@@ -1,7 +1,7 @@
 import json, re
 from fastapi import Request, HTTPException, APIRouter
 
-from .routers import api_session, api_user, api_parse
+from .routers import api_session, api_user, api_parse, api_llm_model
 from .security import require_user, session_belongs_to_user
 
 from ..database.models import RefinementRequest, QueryRequest
@@ -12,6 +12,7 @@ from ..utilities.query_generation import refineQueryGeneration, requirementsQuer
 
 router = APIRouter()
 
+router.include_router(api_llm_model.router)
 router.include_router(api_session.router)
 router.include_router(api_user.router)
 router.include_router(api_parse.router)
