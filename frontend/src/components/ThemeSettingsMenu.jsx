@@ -89,58 +89,94 @@ const ColorPicker = ({ currentColor, onSelectColor, actorName, onClose }) => {
 const QuickModelSelector = () => {
   const [models, setModels] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [currentModel, setCurrentModel] = useState(null);
 
   useEffect(() => {
-    fetchCurrentModel();
+    fetchAvailableModels();
   }, []);
 
   /**
-   * Fetch currently active model and available models
+   * Fetch available models from the API
    */
-  const fetchCurrentModel = async () => {
+  const fetchAvailableModels = async () => {
     try {
-      const response = await fetch('http://localhost:8000/models', {
+      const response = await fetch('http://localhost:8000/models/', {
         credentials: 'include'
       });
 
       if (response.ok) {
         const data = await response.json();
-        setModels(data);
+        console.log('Available models:', data);
+        setModels(data.available_models);
+        
+        // Check if a model is currently active by trying to get status
+        checkCurrentModel();
       }
     } catch (error) {
-      console.error('Error fetching model info:', error);
+      console.error('Error fetching models:', error);
+    }
+  };
+
+  /**
+   * Check if there's a currently active model
+   */
+  const checkCurrentModel = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/model/status', {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.initialized) {
+          setCurrentModel({
+            name: data.model_name,
+            service: data.service
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking model status:', error);
     }
   };
 
   /**
    * Switch model quickly
-   * @param {string} type - Model type ('local' or 'api')
-   * @param {string} model - Model option to activate
+   * @param {string} service - Service type ('openai' or 'hf')
+   * @param {string} modelName - Model name to activate
    */
-  const handleQuickSwitch = async (type, model) => {
+  const handleQuickSwitch = async (service, modelName) => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/model', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          model_type: type,
-          model_option: model
-        })
-      });
+      // For HuggingFace, just initialize with model name
+      if (service === 'hf') {
+        const response = await fetch('http://localhost:8000/model', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            api: 'hf',
+            api_key: null,
+            model_name: modelName
+          })
+        });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success('Model switched successfully');
-        fetchCurrentModel();
-      } else {
-        toast.error(data.detail || 'Failed to switch model');
+        if (response.ok) {
+          toast.success('HuggingFace model activated successfully');
+          setCurrentModel({ name: modelName, service: 'hf' });
+        } else {
+          const error = await response.json();
+          toast.error(error.detail || 'Failed to switch model');
+        }
+      } 
+      // For OpenAI, need API key
+      else if (service === 'openai') {
+        toast.info('Please use the AI Model tab to configure OpenAI with your API key');
       }
     } catch (error) {
+      console.error('Error switching model:', error);
       toast.error('Failed to switch model');
     } finally {
       setLoading(false);
@@ -157,16 +193,16 @@ const QuickModelSelector = () => {
 
   return (
     <div className="space-y-2">
-      {models.current?.type ? (
+      {currentModel ? (
         <div className="flex items-center justify-between p-2 bg-green-100 dark:bg-green-900/30 rounded border border-green-300 dark:border-green-800">
           <div className="flex items-center gap-2">
             <span className="text-green-600 dark:text-green-400">🟢</span>
             <span className="text-sm font-medium text-green-900 dark:text-green-200">
-              {models.current.name}
+              {currentModel.name}
             </span>
           </div>
           <span className="text-xs text-green-700 dark:text-green-300 px-2 py-1 bg-green-200 dark:bg-green-800 rounded">
-            {models.current.type}
+            {currentModel.service}
           </span>
         </div>
       ) : (
@@ -177,28 +213,22 @@ const QuickModelSelector = () => {
 
       {/* Quick switch buttons */}
       <div className="flex gap-2">
-        {models.models.local && models.models.local[0] && (
+        {models.hf && models.hf.length > 0 && (
           <button
-            onClick={() => handleQuickSwitch('local', models.models.local[0])}
-            disabled={loading || models.current?.name === models.models.local[0]}
+            onClick={() => handleQuickSwitch('hf', models.hf[0])}
+            disabled={loading || currentModel?.name === models.hf[0]}
             className="flex-1 text-xs px-3 py-2 bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition disabled:opacity-50"
           >
-            🖥️ Local
+            🖥️ HuggingFace
           </button>
         )}
-        {models.models.api && Object.keys(models.models.api).length > 0 && (
+        {models.openai && models.openai.length > 0 && (
           <button
-            onClick={() => {
-              const firstService = Object.keys(models.models.api)[0];
-              const firstModel = models.models.api[firstService]?.models[0];
-              if (firstModel) {
-                handleQuickSwitch('api', firstModel);
-              }
-            }}
+            onClick={() => handleQuickSwitch('openai', models.openai[0])}
             disabled={loading}
             className="flex-1 text-xs px-3 py-2 bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition disabled:opacity-50"
           >
-            ☁️ API
+            ☁️ OpenAI
           </button>
         )}
       </div>
@@ -212,7 +242,7 @@ const QuickModelSelector = () => {
 const ModelSettingsPanel = () => {
   const [models, setModels] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [selectedType, setSelectedType] = useState('local');
+  const [selectedType, setSelectedType] = useState('hf');
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedAPIService, setSelectedAPIService] = useState('');
   const [apiKey, setApiKey] = useState('');
@@ -227,7 +257,7 @@ const ModelSettingsPanel = () => {
    */
   const fetchAvailableModels = async () => {
     try {
-      const response = await fetch('http://localhost:8000/models', {
+      const response = await fetch('http://localhost:8000/models/', {
         credentials: 'include'
       });
 
@@ -262,7 +292,7 @@ const ModelSettingsPanel = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/model/api', {
+      const response = await fetch('http://localhost:8000/model/api/', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -303,7 +333,7 @@ const ModelSettingsPanel = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/model', {
+      const response = await fetch('http://localhost:8000/models/', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -342,7 +372,7 @@ const ModelSettingsPanel = () => {
   const handleDeactivateModel = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/model', {
+      const response = await fetch('http://localhost:8000/models', {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -390,7 +420,7 @@ const ModelSettingsPanel = () => {
                 {models.current.name} ({models.current.type})
                 {models.current.service && ` - ${models.current.service}`}
               </p>
-              {!models.current.has_api_key && models.current.type === 'api' && (
+              {!models.current.has_api_key && models.current.type === 'openai' && (
                 <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
                   ⚠️ Using rate-limited service. Add API key for better performance.
                 </p>
@@ -415,17 +445,17 @@ const ModelSettingsPanel = () => {
         <div className="flex gap-4">
           <button
             onClick={() => {
-              setSelectedType('local');
+              setSelectedType('hf');
               setSelectedModel('');
             }}
             className={`flex-1 p-3 border-2 rounded-lg transition ${
-              selectedType === 'local'
+              selectedType === 'hf'
                 ? 'border-indigo-600 dark:border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
                 : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
             }`}
           >
             <div className="text-center">
-              <p className="font-medium text-gray-900 dark:text-white">🖥️ Local Model</p>
+              <p className="font-medium text-gray-900 dark:text-white">🖥️ HuggingFace</p>
               <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                 Run on your hardware
               </p>
@@ -433,17 +463,17 @@ const ModelSettingsPanel = () => {
           </button>
           <button
             onClick={() => {
-              setSelectedType('api');
+              setSelectedType('openai');
               setSelectedModel('');
             }}
             className={`flex-1 p-3 border-2 rounded-lg transition ${
-              selectedType === 'api'
+              selectedType === 'openai'
                 ? 'border-indigo-600 dark:border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20'
                 : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
             }`}
           >
             <div className="text-center">
-              <p className="font-medium text-gray-900 dark:text-white">☁️ Cloud API</p>
+              <p className="font-medium text-gray-900 dark:text-white">☁️ OpenAI</p>
               <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                 Use external services
               </p>
@@ -453,10 +483,10 @@ const ModelSettingsPanel = () => {
       </div>
 
       {/* Local Models */}
-      {selectedType === 'local' && (
+      {selectedType === 'hf' && (
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Select Local Model
+            Select HuggingFace Model
           </label>
           <select
             value={selectedModel}
@@ -464,7 +494,7 @@ const ModelSettingsPanel = () => {
             className="w-full px-4 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           >
             <option value="">Choose a model...</option>
-            {models.models.local.map((model) => (
+            {models.available_models.hf.map((model) => (
               <option key={model} value={model}>
                 {model}
               </option>
@@ -474,12 +504,12 @@ const ModelSettingsPanel = () => {
       )}
 
       {/* API Models */}
-      {selectedType === 'api' && (
+      {selectedType === 'openai' && (
         <div className="space-y-4">
           {/* API Service Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              API Service
+              OpenAI Models
             </label>
             <select
               value={selectedAPIService}
@@ -489,10 +519,10 @@ const ModelSettingsPanel = () => {
               }}
               className="w-full px-4 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              <option value="">Choose a service...</option>
-              {models.hosts.api.map((service) => (
-                <option key={service} value={service}>
-                  {models.models.api[service]?.name || service}
+              <option value="">Choose a model...</option>
+                {models.available_models.openai.map((model) => (
+                <option key={model} value={model}>
+                  {model}
                 </option>
               ))}
             </select>
@@ -534,27 +564,6 @@ const ModelSettingsPanel = () => {
                   </p>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Model Selection */}
-          {selectedAPIService && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Select Model
-              </label>
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full px-4 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="">Choose a model...</option>
-                {models.models.api[selectedAPIService]?.models.map((model) => (
-                  <option key={model} value={model}>
-                    {model}
-                  </option>
-                ))}
-              </select>
             </div>
           )}
         </div>

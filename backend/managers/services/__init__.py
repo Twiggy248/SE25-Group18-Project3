@@ -12,6 +12,7 @@ SERVICE_MODELS = {
 
 def initDefault():
     hf_llm.initalizeModel()
+    openai_api.initalizeModel("gpt-4o-mini")
 
 # Global Embedder/SentenceTransformer
 embedder: SentenceTransformer
