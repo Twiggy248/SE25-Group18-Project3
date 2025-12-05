@@ -1,12 +1,3 @@
-# -----------------------------------------------------------------------------
-# File: main.py
-# Description: Main FastAPI application for ReqEngine - handles API endpoints 
-#              for requirements extraction, use case generation, and session management.
-# Author: Pradyumna Chacham
-#         Caleb Twigg
-# Date: November 2025
-# -----------------------------------------------------------------------------
-
 import os
 
 from fastapi import FastAPI

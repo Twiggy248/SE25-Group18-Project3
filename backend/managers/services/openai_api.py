@@ -29,6 +29,14 @@ EXCLUDE_PATTERNS = [
     'moderation',   # Moderation models
 ]
 
+def preStart():
+    try:
+        global client
+        client = OpenAI()
+    except:
+        # Do Nothing
+        pass
+
 def is_chat_model(model_id: str) -> bool:
     """
     Determine if a model is a chat model based on its ID.
@@ -52,15 +60,8 @@ def is_chat_model(model_id: str) -> bool:
 # Initialize OpenAI model
 def initalizeModel(model_name: str):
     """
-    Boots Up the OpenAI API, and assigns model name for future reference
+    Saves OpenAI Model
     """
-    key = os.getenv("OPENAI_API_KEY")
-
-    if not key:
-        raise RuntimeError("Missing environment variable: OPENAI_API_KEY")
-
-    global client
-    client = OpenAI(api_key=key)
 
     # Verify that the selected model is a chat model
     if not is_chat_model(model_name):

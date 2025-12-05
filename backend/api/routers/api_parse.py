@@ -101,9 +101,7 @@ def parse_use_case_fast(request: InputText, request_data: Request):
         if stats["estimated_tokens"] > 300 and max_use_cases_estimate >= 4:
             use_cases_raw = extract_use_cases_batch(request.raw_text, memory_context, max_use_cases_estimate)
         else:
-            use_cases_raw = extract_use_cases_single_stage(
-                request.raw_text, memory_context
-            )
+            use_cases_raw = extract_use_cases_single_stage(request.raw_text, memory_context)
 
         if not use_cases_raw:
             return {"message": "No use cases could be extracted",
@@ -327,7 +325,7 @@ async def parse_use_case_from_document(request: Request, file: UploadFile = File
             domain=domain,
         )
 
-        return parse_use_case_fast(request_data)
+        return parse_use_case_fast(request_data, request)
 
     else:
         # Large document - use chunking with smart estimation per chunk

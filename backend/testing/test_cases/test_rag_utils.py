@@ -93,7 +93,7 @@ async def test_process_document_extraction(complex_requirements_doc):
     3. Identification of integration points
     4. Performance criteria extraction
     """
-    with patch("utilities.rag.get_llm_response") as mock_llm:
+    with patch("backend.utilities.rag.get_llm_response") as mock_llm:
         # Setup mock LLM response with realistic structured output
         mock_llm.return_value = {
             "use_cases": [
@@ -157,7 +157,7 @@ async def test_requirement_quality_analysis(ambiguous_requirements_doc):
     3. Recognition of non-measurable criteria
     4. Validation against IEEE standards
     """
-    with patch("utilities.rag.get_llm_response") as mock_llm:
+    with patch("backend.utilities.rag.get_llm_response") as mock_llm:
         mock_llm.return_value = {
             "analysis": {
                 "ambiguous_terms": ["fast", "user-friendly", "good", "strong"],
@@ -198,7 +198,7 @@ async def test_process_document_error_handling():
     Tests error handling in the document processing pipeline.
     This ensures system resilience and proper user feedback.
     """
-    with patch("utilities.rag.get_llm_response", side_effect=Exception("LLM Error")):
+    with patch("backend.utilities.rag.get_llm_response", side_effect=Exception("LLM Error")):
         with pytest.raises(Exception) as exc_info:
             await process_document("Test content")
         assert "LLM Error" in str(exc_info.value)
@@ -229,7 +229,7 @@ async def test_process_document_with_complex_requirements():
     - Historical data preservation
     """
 
-    with patch("utilities.rag.get_llm_response") as mock_llm:
+    with patch("backend.utilities.rag.get_llm_response") as mock_llm:
         mock_llm.return_value = {
             "use_cases": [
                 {
@@ -280,7 +280,7 @@ async def test_extract_use_cases_with_requirements():
     - Handle 1000+ concurrent searches
     """
 
-    with patch("utilities.rag.validate_use_case") as mock_validator:
+    with patch("backend.utilities.rag.validate_use_case") as mock_validator:
         mock_validator.return_value = True
         use_cases = await extract_use_cases(doc_with_reqs)
 
@@ -296,7 +296,7 @@ async def test_process_document_maintains_traceability():
     Tests that processed documents maintain traceability to source requirements.
     This validates our requirement tracing capabilities.
     """
-    with patch("utilities.rag.get_llm_response") as mock_llm:
+    with patch("backend.utilities.rag.get_llm_response") as mock_llm:
         mock_llm.return_value = {
             "use_cases": [
                 {

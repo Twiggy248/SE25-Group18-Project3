@@ -39,7 +39,7 @@ def update_session(request_data: SessionRequest, request: Request):
     """Update session context as conversation progresses"""
     user_id = require_user(request)
 
-    if not request.session_id:
+    if not request_data.session_id:
         raise HTTPException(status_code=400, detail="session_id is required")
     
     if not session_belongs_to_user(request_data.session_id, user_id):
@@ -77,7 +77,7 @@ def get_session_history(request: Request, session_id: str, limit: int = 10):
 
     history = session_db_manager.get_conversation_history(session_id, limit)
     context = session_db_manager.get_session_context(session_id)
-    use_cases = session_db_manager.get_session_use_cases(session_id)
+    use_cases = usecase_db_manager.get_use_case_by_session(session_id)
     summary = session_db_manager.get_latest_summary(session_id)
 
     return {
@@ -121,7 +121,7 @@ def export_session(session_id: str, request: Request):
 
     conversation = session_db_manager.get_conversation_history(session_id, limit=1000)
     context = session_db_manager.get_session_context(session_id)
-    use_cases = session_db_manager.get_session_use_cases(session_id)
+    use_cases = usecase_db_manager.get_use_case_by_session(session_id)
     summary = session_db_manager.get_latest_summary(session_id)
 
     return {

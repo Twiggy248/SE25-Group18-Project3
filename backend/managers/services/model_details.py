@@ -1,6 +1,6 @@
 
-MODEL_NAME: str
-MODEL_SERVICE: str
+MODEL_NAME: str | None = None
+MODEL_SERVICE: str | None = None
 
 def setModelName(model: str):
     global MODEL_NAME

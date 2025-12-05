@@ -22,5 +22,7 @@ def preStart():
     global embedder
     embedder = SentenceTransformer(DEFAULT_SENTENCE_TRANSFORMER)
 
+    openai_api.preStart()
+
 def getEmbedder() -> SentenceTransformer:
     return embedder
