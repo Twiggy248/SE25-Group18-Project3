@@ -13,9 +13,7 @@ Document Parser
 Extracts text from various document formats: PDF, DOCX, TXT, MD
 """
 
-import io
-import os
-import PyPDF2
+import io, os, PyPDF2
 from typing import Tuple
 from fastapi import HTTPException, UploadFile
 from docx import Document

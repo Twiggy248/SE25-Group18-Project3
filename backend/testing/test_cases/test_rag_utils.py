@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import pytest
 
-from utilities.rag import extract_use_cases, process_document, semantic_chunk, extract_key_concepts
+from ...utilities.rag import extract_use_cases, process_document, semantic_chunk, extract_key_concepts
 
 
 @pytest.fixture

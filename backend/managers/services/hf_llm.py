@@ -3,9 +3,9 @@ from huggingface_hub import HfApi
 
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 
-from backend.utilities.llm.hf_llm_util import initalizeEmbedder, initalizeTokenizer, initalizePipe
-from backend.managers.services.model_details import setModelName, setModelService
-from utilities.llm import hf_llm_util
+from ...utilities.llm.hf_llm_util import initalizeEmbedder, initalizeTokenizer, initalizePipe
+from ...managers.services.model_details import setModelName, setModelService
+from ...utilities.llm import hf_llm_util
 
 """
 Hugging Face will be one of the locally hosted model services that can be utilized

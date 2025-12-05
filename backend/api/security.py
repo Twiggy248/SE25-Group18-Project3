@@ -5,8 +5,9 @@ Contains the functions that are used to ensure security and session management f
 
 
 import sqlite3
-from database import db as database
 from fastapi import Request, HTTPException
+
+from ..database import db as database
 
 
 

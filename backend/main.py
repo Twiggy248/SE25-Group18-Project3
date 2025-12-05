@@ -11,13 +11,14 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from utilities.chunking_strategy import DocumentChunker
-from database.db import init_db, migrate_db
 from dotenv import load_dotenv
-from api.router import router
-from managers.llm_manager import initModel
-from managers.services import preStart
+
+from .utilities.chunking_strategy import DocumentChunker
+from .database.db import init_db, migrate_db
+from .api.router import router
+from .managers.llm_manager import initModel
+from .managers.services import preStart
+
 app = FastAPI()
 load_dotenv()
 

@@ -1,7 +1,7 @@
 import os
 from fastapi import APIRouter, Request, HTTPException, Response
-from api.security import require_user
-from managers import llm_manager as llm_service
+from ..security import require_user
+from ...managers import llm_manager as llm_service
 
 router = APIRouter(
     prefix="/model",

@@ -6,12 +6,12 @@ import pytest_asyncio
 
 pytestmark = pytest.mark.asyncio
 
-from utilities.document_parser import parse_document
-from utilities.exports import export_to_format
+from ...utilities.document_parser import parse_document
+from ...utilities.exports import export_to_format
 # Import all required modules
-from utilities.rag import extract_use_cases, process_document
-from use_case.use_case_enrichment import enrich_use_cases
-from use_case.use_case_validator import validate_requirements
+from ...utilities.rag import extract_use_cases, process_document
+from ...use_case.use_case_enrichment import enrich_use_cases
+from ...use_case.use_case_validator import validate_requirements
 
 
 @pytest_asyncio.fixture

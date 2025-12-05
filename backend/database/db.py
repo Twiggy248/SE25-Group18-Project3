@@ -6,8 +6,7 @@
 # Date: November 2025
 # -----------------------------------------------------------------------------
 
-import os
-import sqlite3
+import os, sqlite3
 
 db_path = os.path.join(os.path.dirname(__file__), "requirements.db")
 

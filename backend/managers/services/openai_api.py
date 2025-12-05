@@ -1,6 +1,7 @@
 from openai import OpenAI
-import model_details as service
 import os
+
+from . import model_details as service
 
 client: OpenAI
 

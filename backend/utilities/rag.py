@@ -4,11 +4,11 @@
 #              handles vector store operations and semantic search functionality.
 # -----------------------------------------------------------------------------
 
-from typing import Dict, List
-from key_values import SIMPLE_STOPWRODS
-from query_generation import summarize_session_queryGen
-
 import nltk
+
+from typing import Dict, List
+from .key_values import SIMPLE_STOPWRODS
+from .query_generation import summarize_session_queryGen
 
 # Make ChromaDB import optional for testing
 try:

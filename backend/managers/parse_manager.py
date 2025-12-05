@@ -1,16 +1,16 @@
 import json, time, sqlite3, torch
 from typing import Optional
-
 from sentence_transformers import util
-from utilities.rag import build_memory_context
-from use_case.use_case_validator import UseCaseValidator
-from database.models import UseCaseSchema
-from database.db import getDatabasePath
-from database.managers import session_db_manager, usecase_db_manager
-from utilities.use_case_utilities import compute_usecase_embedding, flatten_use_case
-from managers.use_case_manager import extract_use_cases_single_stage
-from utilities.chunking_strategy import DocumentChunker
-from backend.utilities.llm.hf_llm_util import getEmbedder
+
+from ..database.models import UseCaseSchema
+from ..database.db import getDatabasePath
+from ..database.managers import session_db_manager, usecase_db_manager
+from ..managers.use_case_manager import extract_use_cases_single_stage
+from ..use_case.use_case_validator import UseCaseValidator
+from ..utilities.rag import build_memory_context
+from ..utilities.use_case_utilities import compute_usecase_embedding, flatten_use_case
+from ..utilities.chunking_strategy import DocumentChunker
+from ..utilities.llm.hf_llm_util import getEmbedder
 
 
 embedder = getEmbedder()

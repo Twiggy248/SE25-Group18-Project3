@@ -1,7 +1,8 @@
-from backend.utilities.llm.hf_llm_util import getPipe
 import re
-from utilities.key_values import ACTION_VERBS, ACTORS
-from utilities.query_generation import session_title_queryGen
+
+from ..utilities.llm.hf_llm_util import getPipe
+from ..utilities.key_values import ACTION_VERBS, ACTORS
+from ..utilities.query_generation import session_title_queryGen
 
 pipe = getPipe()
 

@@ -1,5 +1,5 @@
-from services import SERVICE_MODELS, initDefault
-import services.model_details as service
+from .services import SERVICE_MODELS, initDefault
+from .services import model_details as service
 
 def status() -> bool:
     """

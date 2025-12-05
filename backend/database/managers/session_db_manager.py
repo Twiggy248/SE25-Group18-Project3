@@ -1,6 +1,7 @@
 import sqlite3, json
-from database.db import getDatabasePath
 from typing import List, Dict, Optional
+
+from ...database.db import getDatabasePath
 
 def create_session(session_id: str, user_id: str, project_context: str = "", domain: str = "", session_title: str = "New Session"):
     """Create a new session or update existing one"""

@@ -17,12 +17,13 @@ import torch
 from fastapi import File, UploadFile
 from fastapi.testclient import TestClient
 
-from backend.main import app
-from utilities.use_case_utilities import UseCaseEstimator
-import utilities.use_case_utilities as usecaseUtil
-import utilities.llm_generation as llmGen
-import utilities.misc as util
-import managers.session_manager as sessionManager
+from ...main import app
+from ...utilities.use_case_utilities import UseCaseEstimator
+
+from ...utilities import use_case_utilities as usecaseUtil
+from ...utilities import llm_generation as llmGen
+from ...utilities import misc as util
+from ...managers import session_manager as sessionManager
 
 
 @pytest.fixture

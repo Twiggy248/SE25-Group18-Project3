@@ -1,11 +1,15 @@
 import json, re
 from fastapi import Request, HTTPException, APIRouter
-from api.routers import api_session, api_user, api_parse
-from database.models import RefinementRequest, QueryRequest
-from database.managers import usecase_db_manager
-from backend.utilities.llm.hf_llm_util import getPipe, DEFAULT_MODEL_NAME
-from backend.utilities.query_generation import refineQueryGeneration, requirementsQueryGeneration
-from api.security import require_user, session_belongs_to_user
+
+from .routers import api_session, api_user, api_parse
+from .security import require_user, session_belongs_to_user
+
+from ..database.models import RefinementRequest, QueryRequest
+from ..database.managers import usecase_db_manager
+from ..managers.services import model_details
+from ..utilities.llm.hf_llm_util import getPipe
+from ..utilities.query_generation import refineQueryGeneration, requirementsQueryGeneration
+
 router = APIRouter()
 
 router.include_router(api_session.router)
@@ -146,7 +150,7 @@ def health_check():
     """Health check endpoint with system info"""
     return {
         "status": "healthy",
-        "model": DEFAULT_MODEL_NAME,
+        "model": model_details.getModelName(),
         "extraction_method": "smart_single_stage_with_chunking",
         "performance": "Intelligent estimation + dynamic token budgets",
         "features": [
