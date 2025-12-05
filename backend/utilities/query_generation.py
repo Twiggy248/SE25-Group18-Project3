@@ -127,7 +127,7 @@ def uc_single_stage_extract_queryGen(max_use_cases: id, memory_context: str, tex
     
     return [systemInstruction, queryText]
 
-def uc_batch_extract_queryGen(batch_count: id, memory_context: str, text:str) -> str:
+def uc_batch_extract_queryGen(batch_count: id, memory_context: str, text:str) -> list[str]:
 
     """
     Generate a query for the Single Stage Use Cases Extraction

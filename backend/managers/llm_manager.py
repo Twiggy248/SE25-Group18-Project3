@@ -1,6 +1,8 @@
 from .services import SERVICE_MODELS, initDefault
 from .services import model_details as service
 
+DEFAULT_MAX_NEW_TOKENS = 256
+
 def status() -> bool:
     """
     Checks the current status of the LLM System. If Model Name has been set,
@@ -63,7 +65,7 @@ def initModel(service: str, api_key: str, model_name: str):
         initFunc(model_name)
 
 # query model
-def makeQuery(instructionsStr: str, query: str) -> dict[str, str]:
+def makeQuery(instructionsStr: str, query: str, max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS) -> dict[str, str]:
     """
     The Generic Query method used by the project. Pulls the current LLM Service and Model, and queries it as
     defined in that specific LLM's integration code.
@@ -89,7 +91,7 @@ def makeQuery(instructionsStr: str, query: str) -> dict[str, str]:
     queryFunc = funcs[2]
     
     # Make the query
-    response = queryFunc(instructionsStr, query)
+    response = queryFunc(instructionsStr, query, max_new_tokens)
 
     # Return the query response
     return response

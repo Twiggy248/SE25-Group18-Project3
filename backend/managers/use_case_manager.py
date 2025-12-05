@@ -1,15 +1,14 @@
 import json, re, time
 from typing import List
 
+from ..managers.llm_manager import makeQuery
+
 from ..use_case.use_case_enrichment import enrich_use_case
-from ..utilities.llm.hf_llm_util import getPipe
 from ..utilities.use_case_utilities import get_smart_max_use_cases, get_smart_token_budget
 from ..utilities.llm_generation import clean_llm_json
 from ..utilities.misc import ensure_string_list
 from ..utilities.key_values import ACTION_VERBS, ACTORS
 from ..utilities.query_generation import uc_batch_extract_queryGen, uc_single_stage_extract_queryGen
-
-pipe = getPipe()
 
 """
 use_case_manager.py
@@ -31,23 +30,15 @@ def extract_use_cases_single_stage(text: str, memory_context: str, max_use_cases
     # Dynamic token budget
     max_new_tokens = get_smart_token_budget(text, max_use_cases)
 
-    # ✅ IMPROVED PROMPT - Clearer, more explicit
-    prompt = uc_single_stage_extract_queryGen(max_use_cases, memory_context, text)
+    # Get the instruction string and prompt from the 
+    prompts = uc_single_stage_extract_queryGen(max_use_cases, memory_context, text)
 
     try:
 
         # Generate with conservative settings
-        outputs = pipe(
-            prompt,
-            max_new_tokens=max_new_tokens,
-            temperature=0.3,  # Increase from 0.1 - less rigid
-            top_p=0.85,  # Increase from 0.7 - more diverse
-            repetition_penalty=1.1,  # Reduce from 1.15 - less restrictive
-            do_sample=True,
-            return_full_text=False
-        )
+        outputs = makeQuery(prompts[0], prompts[1], max_new_tokens)
 
-        response = "[" + outputs[0]["generated_text"].strip()
+        response = "[" + outputs["generated_text"].strip()
 
         # Extract JSON array
         start_idx = response.find("[")
@@ -133,26 +124,16 @@ def extract_use_cases_batch(text: str, memory_context: str, max_use_cases: int) 
         batch_count = min(batch_size, remaining)
 
         # Create focused prompt for this batch
-        prompt = uc_batch_extract_queryGen(batch_count, memory_context, text)
+        prompts = uc_batch_extract_queryGen(batch_count, memory_context, text)
 
         # Calculate token budget for this batch
         batch_tokens = batch_count * 150 + 100  # 150 tokens per use case + overhead
 
-        start_time = time.time()
-
         try:
             # Generate with reduced tokens
-            outputs = pipe(
-                prompt,
-                max_new_tokens=batch_tokens,
-                temperature=0.3,
-                top_p=0.85,
-                repetition_penalty=1.1,
-                do_sample=True,
-                return_full_text=False
-            )
+            outputs = makeQuery(prompts[0], prompts[1], batch_tokens)
 
-            response = "[" + outputs[0]["generated_text"].strip()
+            response = "[" + outputs["generated_text"].strip()
 
             # Extract JSON
             start_idx = response.find("[")

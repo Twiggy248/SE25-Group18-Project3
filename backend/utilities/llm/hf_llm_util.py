@@ -8,9 +8,9 @@ from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer, pipeline, PreTrainedModel, TextGenerationPipeline
 
 
-embedder: SentenceTransformer
-tokenizer: AutoTokenizer
-pipe: TextGenerationPipeline
+embedder: SentenceTransformer | None = None
+tokenizer: AutoTokenizer | None = None
+pipe: TextGenerationPipeline | None = None
 
 ######################
 #   DEFAULT VALUES   #
@@ -67,7 +67,7 @@ def initalizePipe(model: PreTrainedModel, tokenizer: AutoTokenizer):
                     do_sample=True, 
                     return_full_text=False,
                     top_p=DEFAULT_TOP_P,
-                    repition_penalty=DEFAULT_REP_PENALTY, 
+                    repetition_penalty=DEFAULT_REP_PENALTY, 
                     eos_token_id=tokenizer.eos_token_id,
                     pad_token_id=tokenizer.eos_token_id)
 

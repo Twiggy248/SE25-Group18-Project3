@@ -50,15 +50,26 @@ except Exception as e:
 
 # Check if we should load the model 
 # (must not be in testing mode and Auto_boot should be true)
-testing_mode = os.getenv("TESTING").lower() == "true"
-auto_boot = os.getenv("AUTO_BOOT").lower() == "true"
+testing_mode = os.getenv("TESTING")
+
+if (testing_mode is None or testing_mode.lower() == "false"):
+    testing_mode = False
+else:
+    testing_mode = True
+
+auto_boot = os.getenv("AUTO_BOOT")
+if (auto_boot is None or auto_boot.lower() == "false"):
+    auto_boot = False
+else:
+    auto_boot = True
 
 load_model = auto_boot and (not testing_mode)
+
+preStart()
 
 # If load model is true, the system will load the default model configuration
 if load_model:
     initModel()
     
 else:
-    preStart()
     chunker = None

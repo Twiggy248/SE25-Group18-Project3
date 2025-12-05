@@ -1,6 +1,6 @@
 # Treating api/services as a package containing all functionality for LLM's
 
-import openai_api, hf_llm
+from . import openai_api, hf_llm
 from sentence_transformers import SentenceTransformer
 
 

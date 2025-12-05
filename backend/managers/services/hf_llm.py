@@ -11,7 +11,6 @@ from ...utilities.llm import hf_llm_util
 Hugging Face will be one of the locally hosted model services that can be utilized
 """
 DEFAULT_MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
-DEFAULT_MAX_NEW_TOKENS = 256
 
 def initalizeModel(model_name: str):
 
@@ -64,7 +63,7 @@ def getModels() -> list[str]:
     return models_list
 
 
-def query(instruction: str, query: str, max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS) -> dict[str, str]:
+def query(instruction: str, query: str, max_new_tokens: int) -> dict[str, str]:
     pipe = hf_llm_util.getPipe()
 
     # Hugging face uses one string for a query

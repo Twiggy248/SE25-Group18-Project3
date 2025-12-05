@@ -30,7 +30,7 @@ def getModels() -> list[str]:
     return models_list
 
 
-def query(instructionsStr: str, query: str) -> dict[str, object]:
+def query(instructionsStr: str, query: str, max_tokens: int) -> dict[str, object]:
     """
     Queries an OpenAI Model given the request and the system context
     Returns the response as a Dict object
@@ -38,7 +38,8 @@ def query(instructionsStr: str, query: str) -> dict[str, object]:
     response = client.responses.create(
         model=service.getModelName(),
         instructions=instructionsStr,
-        input=query
+        input=query,
+        max_output_tokens=max_tokens
     )
 
     return response.to_dict()

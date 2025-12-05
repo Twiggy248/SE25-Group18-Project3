@@ -7,7 +7,7 @@ from .security import require_user, session_belongs_to_user
 from ..database.models import RefinementRequest, QueryRequest
 from ..database.managers import usecase_db_manager
 from ..managers.services import model_details
-from ..utilities.llm.hf_llm_util import getPipe
+from ..managers.llm_manager import makeQuery
 from ..utilities.query_generation import refineQueryGeneration, requirementsQueryGeneration
 
 router = APIRouter()
@@ -15,8 +15,6 @@ router = APIRouter()
 router.include_router(api_session.router)
 router.include_router(api_user.router)
 router.include_router(api_parse.router)
-
-pipe = getPipe()
 
 @router.post("/use-case/refine")
 def refine_use_case_endpoint(request: RefinementRequest):
@@ -27,19 +25,14 @@ def refine_use_case_endpoint(request: RefinementRequest):
         raise HTTPException(status_code=404, detail="Use case not found")
 
     # Build refinement prompt based on type
-    prompt = refineQueryGeneration(use_case, request.refinement_type)
+    prompts = refineQueryGeneration(use_case, request.refinement_type)
+    max_tokens = 800
 
     try:
-        outputs = pipe(
-            prompt,
-            max_new_tokens=800,
-            temperature=0.4,
-            top_p=0.9,
-            do_sample=True,
-            return_full_text=False,
-        )
+        # Orginally had temp of 0.4, top_p of 0.9
+        outputs = makeQuery(prompts[0], prompts[1], max_tokens)
 
-        response = outputs[0]["generated_text"].strip()
+        response = outputs["generated_text"].strip()
 
         # Extract JSON
         if not response.startswith("{"):
@@ -100,19 +93,14 @@ def query_requirements(request: QueryRequest, request_data: Request):
 
     context = json.dumps(use_cases_for_context, indent=2)
 
-    prompt = requirementsQueryGeneration(context, request.question)
+    prompts = requirementsQueryGeneration(context, request.question)
+    max_tokens = 400
 
     try:
-        outputs = pipe(
-            prompt,
-            max_new_tokens=400,
-            temperature=0.5,
-            top_p=0.9,
-            do_sample=True,
-            return_full_text=False,
-        )
+        # Originally temp=0.5, top_p=.09
+        outputs = makeQuery(prompts[0], prompts[1], max_tokens)
 
-        answer = outputs[0]["generated_text"].strip()
+        answer = outputs["generated_text"].strip()
 
         # Post-process to remove any use case numbers that might have slipped through
         # Remove patterns like "Use Case 249", "Use Case 248", "UC 253", etc.
