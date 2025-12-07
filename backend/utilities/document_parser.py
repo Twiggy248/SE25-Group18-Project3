@@ -13,9 +13,7 @@ Document Parser
 Extracts text from various document formats: PDF, DOCX, TXT, MD
 """
 
-import io
-import os
-import PyPDF2
+import io, os, PyPDF2
 from typing import Tuple
 from fastapi import HTTPException, UploadFile
 from docx import Document
@@ -89,9 +87,7 @@ def extract_from_text(content: bytes) -> str:
         try:
             return content.decode("latin-1")
         except Exception as e:
-            raise HTTPException(
-                status_code=400, detail=f"Error decoding text file: {str(e)}"
-            )
+            raise HTTPException(status_code=400, detail=f"Error decoding text file: {str(e)}")
 
 
 def extract_from_pdf(content: bytes) -> str:
@@ -108,20 +104,12 @@ def extract_from_pdf(content: bytes) -> str:
                 if text.strip():
                     text_parts.append(text)
             except Exception as e:
-                print(
-                    f"⚠️  Warning: Could not extract text from page {page_num + 1}: {e}"
-                )
                 continue
 
         if not text_parts:
-            raise HTTPException(
-                status_code=400, detail="No text could be extracted from PDF"
-            )
+            raise HTTPException(status_code=400, detail="No text could be extracted from PDF")
 
         full_text = "\n\n".join(text_parts)
-        print(
-            f"✅ Extracted {len(full_text)} characters from {len(pdf_reader.pages)} pages"
-        )
 
         return full_text
 
@@ -153,12 +141,9 @@ def extract_from_docx(content: bytes) -> str:
                     text_parts.append(row_text)
 
         if not text_parts:
-            raise HTTPException(
-                status_code=400, detail="No text could be extracted from DOCX"
-            )
+            raise HTTPException(status_code=400, detail="No text could be extracted from DOCX")
 
         full_text = "\n\n".join(text_parts)
-        print(f"✅ Extracted {len(full_text)} characters from DOCX")
 
         return full_text
 
@@ -191,8 +176,6 @@ def validate_file_size(file: UploadFile, max_size_mb: int = 10) -> None:
             status_code=400,
             detail=f"File too large: {size_mb:.2f}MB. Maximum allowed: {max_size_mb}MB",
         )
-
-    print(f"✅ File size: {size_mb:.2f}MB")
 
 
 def get_text_stats(text: str) -> dict:

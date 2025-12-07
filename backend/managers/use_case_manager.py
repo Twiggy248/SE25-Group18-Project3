@@ -1,22 +1,19 @@
-import json
-import re
-import time
+import json, re, time
 from typing import List
-from utilities.tools import getTokenizer, getPipe
 
-from use_case.use_case_enrichment import enrich_use_case
-from utilities.use_case_utilities import get_smart_max_use_cases, get_smart_token_budget
-from utilities.llm_generation import clean_llm_json
-from utilities.misc import ensure_string_list
-from utilities.key_values import ACTION_VERBS, ACTORS
+from ..managers.llm_manager import makeQuery
 
-tokenizer = getTokenizer()
+from ..use_case.use_case_enrichment import enrich_use_case
+from ..utilities.use_case_utilities import get_smart_max_use_cases, get_smart_token_budget
+from ..utilities.llm_generation import clean_llm_json
+from ..utilities.misc import ensure_string_list
+from ..utilities.key_values import ACTION_VERBS, ACTORS
+from ..utilities.query_generation import uc_batch_extract_queryGen, uc_single_stage_extract_queryGen
 
 """
 use_case_manager.py
 Handles any operations (outside of API or Database) that deal with Use Cases
 """
-pipe = getPipe()
 
 def extract_use_cases_single_stage(text: str, memory_context: str, max_use_cases: int = None) -> List[dict]:
     """
@@ -33,102 +30,26 @@ def extract_use_cases_single_stage(text: str, memory_context: str, max_use_cases
     # Dynamic token budget
     max_new_tokens = get_smart_token_budget(text, max_use_cases)
 
-    # ✅ IMPROVED PROMPT - Clearer, more explicit
-    prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-
-                You are a requirements analyst. Extract use cases from text and return them as JSON.
-
-                CRITICAL RULES:
-                1. Each action mentioned should be a SEPARATE use case
-                2. DO NOT create duplicate use cases with the same title
-                3. Each use case must be unique and distinct
-                4. Split compound actions: "logs in and adds" → 2 separate use cases
-
-
-                <|eot_id|><|start_header_id|>user<|end_header_id|>
-
-                {memory_context}
-
-                Requirements:
-                {text}
-
-                Extract approximately {max_use_cases} UNIQUE, DISTINCT use cases from the requirements above.
-
-                IMPORTANT: 
-                - "User logs in and adds to cart" → Create 2 separate use cases:
-                1. "User logs in to system"  
-                2. "User adds items to cart"
-                - DO NOT create the same use case twice
-                - Each use case must have a different title
-
-                Return a JSON array where EACH use case has UNIQUE title and purpose:
-                [
-                {{
-                    "title": "User logs in to system",
-                    "preconditions": ["User has valid credentials"],
-                    "main_flow": ["User opens app", "User enters credentials", "System validates", "User is authenticated"],
-                    "sub_flows": ["User can reset password", "User can remember device"],
-                    "alternate_flows": ["If invalid: System shows error", "If locked: System requires unlock"],
-                    "outcomes": ["User is logged in successfully"],
-                    "stakeholders": ["User", "Authentication System"]
-                }},
-                {{
-                    "title": "User adds items to shopping cart",
-                    "preconditions": ["User is logged in", "Products are available"],
-                    "main_flow": ["User browses products", "User selects product", "User clicks add to cart", "System adds item", "Cart is updated"],
-                    "sub_flows": ["User can adjust quantity", "User can view cart"],
-                    "alternate_flows": ["If out of stock: System notifies user", "If cart full: System prompts checkout"],
-                    "outcomes": ["Item added to cart successfully"],
-                    "stakeholders": ["User", "Shopping Cart System", "Inventory System"]
-                }}
-                ]
-
-                <|eot_id|><|start_header_id|>assistant<|end_header_id|>
-
-                ["""
+    # Get the instruction string and prompt from the 
+    prompts = uc_single_stage_extract_queryGen(max_use_cases, memory_context, text)
 
     try:
-        print(f"🚀 ROBUST SINGLE-STAGE EXTRACTION")
-        print(f"   Estimated: {max_use_cases} use cases")
-        print(f"   Token budget: {max_new_tokens}")
-        print(f"   Input size: {len(text)} chars\n")
-
-        start_time = time.time()
 
         # Generate with conservative settings
-        outputs = pipe(
-            prompt,
-            max_new_tokens=max_new_tokens,
-            temperature=0.3,  # Increase from 0.1 - less rigid
-            top_p=0.85,  # Increase from 0.7 - more diverse
-            repetition_penalty=1.1,  # Reduce from 1.15 - less restrictive
-            do_sample=True,
-            return_full_text=False,
-            eos_token_id=tokenizer.eos_token_id,
-            pad_token_id=tokenizer.eos_token_id,
-        )
+        outputs = makeQuery(prompts[0], prompts[1], max_new_tokens)
 
-        response = "[" + outputs[0]["generated_text"].strip()
-
-        elapsed = time.time() - start_time
-        print(f"⏱️  Generation time: {elapsed:.1f}s\n")
-
-        # Show preview
-        preview = response[:500].replace("\n", " ")
-        print(f"📋 Output preview:\n{preview}...\n")
+        response = "[" + outputs["generated_text"].strip()
 
         # Extract JSON array
         start_idx = response.find("[")
         end_idx = response.rfind("]")
 
         if start_idx == -1 or end_idx == -1:
-            print("⚠️  No JSON array found, using fallback\n")
             return extract_with_smart_fallback(text)
 
         json_str = response[start_idx : end_idx + 1]
 
         # ✅ ROBUST CLEANING
-        print("🔧 Cleaning JSON...")
         json_str = clean_llm_json(json_str)
 
         # Attempt to parse
@@ -136,16 +57,12 @@ def extract_use_cases_single_stage(text: str, memory_context: str, max_use_cases
             use_cases_raw = json.loads(json_str)
 
             if not isinstance(use_cases_raw, list):
-                print(f"⚠️  Expected array, got {type(use_cases_raw)}\n")
                 return extract_with_smart_fallback(text)
-
-            print(f"✅ Parsed {len(use_cases_raw)} use cases from JSON\n")
 
             use_cases = []
 
             for idx, uc in enumerate(use_cases_raw, 1):
                 if not isinstance(uc, dict):
-                    print(f"⚠️  Skipping non-dict item {idx}")
                     continue
 
                 # Validate and structure
@@ -166,11 +83,9 @@ def extract_use_cases_single_stage(text: str, memory_context: str, max_use_cases
                 flow_len = len(validated_uc["main_flow"])
 
                 if title_len < 10:
-                    print(f"⚠️  [{idx}] Title too short: {validated_uc['title']}")
                     continue
 
                 if flow_len < 3:
-                    print(f"⚠️  [{idx}] Main flow too short ({flow_len} steps)")
                     # Enrich it instead of skipping
                     validated_uc = enrich_use_case(validated_uc, text)
 
@@ -178,31 +93,16 @@ def extract_use_cases_single_stage(text: str, memory_context: str, max_use_cases
                 validated_uc = enrich_use_case(validated_uc, text)
                 use_cases.append(validated_uc)
 
-                print(f"✅ [{idx}] {validated_uc['title'][:60]}")
-
             # Hard limit check
             if len(use_cases) > max_use_cases + 2:
-                print(f"\n⚠️  Extracted {len(use_cases)} but estimated {max_use_cases}")
-                print(f"   Keeping top {max_use_cases} use cases\n")
                 use_cases = use_cases[:max_use_cases]
-
-            total_time = time.time() - start_time
-            print(f"\n⚡ Success: {len(use_cases)} use cases in {total_time:.1f}s")
-            if use_cases:
-                print(f"   Average: {total_time/len(use_cases):.1f}s per use case\n")
 
             return use_cases
 
         except json.JSONDecodeError as e:
-            print(f"❌ JSON parse failed: {e}")
-            print(f"   Error at position {e.pos}")
-            print(
-                f"   Problematic section: ...{json_str[max(0,e.pos-50):e.pos+50]}...\n"
-            )
             return extract_with_smart_fallback(text)
 
     except Exception as e:
-        print(f"❌ Extraction error: {e}\n")
         import traceback
 
         traceback.print_exc()
@@ -214,10 +114,6 @@ def extract_use_cases_batch(text: str, memory_context: str, max_use_cases: int) 
     Optimized for RTX 3050: 3-5x faster than single-stage
     """
 
-    print(f"🔄 BATCH EXTRACTION MODE")
-    print(f"   Total use cases to extract: {max_use_cases}")
-    print(f"   Processing in batches of 3-4 use cases\n")
-
     all_use_cases = []
     batch_size = 3  # Extract 3 use cases per batch
     total_batches = (max_use_cases + batch_size - 1) // batch_size
@@ -227,72 +123,23 @@ def extract_use_cases_batch(text: str, memory_context: str, max_use_cases: int) 
         remaining = max_use_cases - start_idx
         batch_count = min(batch_size, remaining)
 
-        print(f"{'='*80}")
-        print(
-            f"📦 BATCH {batch_num + 1}/{total_batches} - Extracting {batch_count} use cases"
-        )
-        print(f"{'='*80}")
-
         # Create focused prompt for this batch
-        prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-
-You are a requirements analyst. Extract exactly {batch_count} use cases from the requirements.
-
-<|eot_id|><|start_header_id|>user<|end_header_id|>
-
-{memory_context}
-
-Requirements:
-{text}
-
-Extract exactly {batch_count} distinct use cases. Return ONLY a JSON array:
-
-[
-  {{
-    "title": "Actor performs action on object",
-    "preconditions": ["Precondition 1", "Precondition 2"],
-    "main_flow": ["Step 1", "Step 2", "Step 3", "Step 4"],
-    "sub_flows": ["Optional feature 1", "Optional feature 2"],
-    "alternate_flows": ["Error case 1", "Error case 2"],
-    "outcomes": ["Success result 1", "Success result 2"],
-    "stakeholders": ["Actor", "System"]
-  }}
-]
-
-<|eot_id|><|start_header_id|>assistant<|end_header_id|>
-
-["""
+        prompts = uc_batch_extract_queryGen(batch_count, memory_context, text)
 
         # Calculate token budget for this batch
         batch_tokens = batch_count * 150 + 100  # 150 tokens per use case + overhead
 
-        start_time = time.time()
-
         try:
             # Generate with reduced tokens
-            outputs = pipe(
-                prompt,
-                max_new_tokens=batch_tokens,
-                temperature=0.3,
-                top_p=0.85,
-                repetition_penalty=1.1,
-                do_sample=True,
-                return_full_text=False,
-                eos_token_id=tokenizer.eos_token_id,
-                pad_token_id=tokenizer.eos_token_id,
-            )
+            outputs = makeQuery(prompts[0], prompts[1], batch_tokens)
 
-            response = "[" + outputs[0]["generated_text"].strip()
-            elapsed = time.time() - start_time
-
-            print(f"⏱️  Batch generation time: {elapsed:.1f}s\n")
+            response = "[" + outputs["generated_text"].strip()
 
             # Extract JSON
             start_idx = response.find("[")
             end_idx = response.rfind("]")
 
             if start_idx == -1 or end_idx == -1:
-                print(f"⚠️  No JSON array in batch {batch_num + 1}, skipping\n")
                 continue
 
             json_str = response[start_idx : end_idx + 1]
@@ -303,12 +150,7 @@ Extract exactly {batch_count} distinct use cases. Return ONLY a JSON array:
                 batch_use_cases = json.loads(json_str)
 
                 if not isinstance(batch_use_cases, list):
-                    print(f"⚠️  Invalid JSON structure in batch {batch_num + 1}\n")
                     continue
-
-                print(
-                    f"✅ Parsed {len(batch_use_cases)} use cases from batch {batch_num + 1}"
-                )
 
                 # Validate and add to results
                 for idx, uc in enumerate(batch_use_cases, 1):
@@ -335,28 +177,13 @@ Extract exactly {batch_count} distinct use cases. Return ONLY a JSON array:
                     validated_uc = enrich_use_case(validated_uc, text)
                     all_use_cases.append(validated_uc)
 
-                    print(f"   [{len(all_use_cases)}] {validated_uc['title'][:60]}")
-
-                print(
-                    f"\n✅ Batch {batch_num + 1} complete: {len(batch_use_cases)} use cases extracted\n"
-                )
-
             except json.JSONDecodeError as e:
-                print(f"❌ JSON parse error in batch {batch_num + 1}: {e}\n")
                 continue
 
         except Exception as e:
-            print(f"❌ Error in batch {batch_num + 1}: {e}\n")
             import traceback
-
             traceback.print_exc()
             continue
-
-    print(f"\n{'='*80}")
-    print(f"✅ BATCH EXTRACTION COMPLETE")
-    print(f"{'='*80}")
-    print(f"Total use cases extracted: {len(all_use_cases)}")
-    print(f"{'='*80}\n")
 
     return all_use_cases
 
@@ -364,7 +191,6 @@ def extract_with_smart_fallback(text: str) -> List[dict]:
     """
     IMPROVED FALLBACK with better pattern recognition
     """
-    print("🔧 Enhanced fallback extraction...\n")
 
     use_cases = []
     seen_titles = set()
@@ -459,7 +285,6 @@ def extract_with_smart_fallback(text: str) -> List[dict]:
                     }
 
                     use_cases.append(use_case)
-                    print(f"✅ Fallback [{len(use_cases)}]: {title}")
 
                     if len(use_cases) >= 15:
                         break
@@ -470,6 +295,5 @@ def extract_with_smart_fallback(text: str) -> List[dict]:
         if len(use_cases) >= 15:
             break
 
-    print(f"\n🔧 Fallback: Extracted {len(use_cases)} quality use cases\n")
     return use_cases
 

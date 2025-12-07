@@ -181,7 +181,7 @@ if not os.getenv("TESTING"):
     #     quantization_config=bnb_config,
     #     device_map="auto",
     #     token=token,
-    #     torch_dtype=torch.float16,
+    #     dtype=torch.float16,
     #     low_cpu_mem_usage=True,
     # )
    ##################################################

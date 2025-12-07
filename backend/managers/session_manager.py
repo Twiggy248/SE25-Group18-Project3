@@ -1,8 +1,9 @@
-from utilities.tools import getPipe
 import re
-from utilities.key_values import ACTION_VERBS, ACTORS
 
-pipe = getPipe()
+from ..managers.llm_manager import makeQuery
+from ..utilities.key_values import ACTION_VERBS, ACTORS
+from ..utilities.query_generation import session_title_queryGen
+
 
 # NOTE: Why is max_length a parameter if it is never passed in?
 # NOTE: Why is the use_llm being passed if it is always passed as true by outside functions?
@@ -36,24 +37,12 @@ def generate_session_title(first_user_message: str, max_length: int = 50, use_ll
 
     # For important views, use LLM
     try:
-        prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-                    You are a requirements analyst. Create a concise session title (4-7 words) that summarizes this requirement text.
-                    <|eot_id|><|start_header_id|>user<|end_header_id|>
-                    Requirements text:
-                    {text[:300]}
-                    Generate a short, descriptive title (4-7 words):
-                    <|eot_id|><|start_header_id|>assistant<|end_header_id|>
-                    """
-        outputs = pipe(
-            prompt,
-            max_new_tokens=30,
-            temperature=0.3,
-            top_p=0.85,
-            do_sample=True,
-            return_full_text=False,
-        )
+        prompts = session_title_queryGen(text[:300])
+        max_tokens = 30
 
-        title = outputs[0]["generated_text"].strip()
+        outputs = makeQuery(prompts[0], prompts[1], max_tokens)
+
+        title = outputs["generated_text"].strip()
         title = title.replace("\n", " ").strip().strip("\"'.,;:")
 
         word_count = len(title.split())
@@ -61,7 +50,7 @@ def generate_session_title(first_user_message: str, max_length: int = 50, use_ll
             return title
 
     except Exception as e:
-        print(f"⚠️  LLM title generation failed: {e}")
+        print(f"LLM title generation failed: {e}")
 
     return generate_fallback_title(text, max_length)
 

@@ -8,20 +8,16 @@
 # License: MIT License - see LICENSE file in the root directory.
 # -----------------------------------------------------------------------------
 
-import os
-from io import BytesIO
-
 import pytest
-import PyPDF2
+
+from io import BytesIO
 from fastapi import HTTPException
 from reportlab.pdfgen import canvas
-
-from utilities.document_parser import extract_from_pdf, extract_from_docx
 from docx import Document
 
-from utilities.document_parser import (categorize_text_size, extract_from_text,
+from ...utilities.document_parser import (categorize_text_size, extract_from_text,
                              extract_text_from_file, get_text_stats,
-                             parse_document, validate_file_size)
+                             parse_document, validate_file_size, extract_from_pdf, extract_from_docx)
 
 
 class MockFile:

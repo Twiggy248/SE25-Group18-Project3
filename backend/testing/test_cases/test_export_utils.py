@@ -1,8 +1,6 @@
-import os
+import os, pytest
 
-import pytest
-
-from utilities.exports import (_build_jira_description, _convert_to_jira_issue,
+from ...utilities.exports import (_build_jira_description, _convert_to_jira_issue,
                           export_to_docx, export_to_format, export_to_json,
                           export_to_markdown, export_to_plantuml, export_to_html)
 

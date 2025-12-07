@@ -10,7 +10,7 @@ Validates use case quality and completeness with safe type handling
 """
 
 from typing import List, Tuple
-from utilities.key_values import ACTION_VERBS, SECURITY
+from ..utilities.key_values import ACTION_VERBS, SECURITY
 
 
 def validate_requirements(use_cases: list, validation_data: list = None) -> list:
