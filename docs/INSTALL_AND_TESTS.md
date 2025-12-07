@@ -150,17 +150,19 @@ cd CSC510-SE-Group17/proj2
 
 ### MacOS Further Instructions 
 
-Due to hardware & CUDA constraints, please make the following changes to the ```MODEL LOADING``` section
-in ```main.py```
+Due to hardware & CUDA constraints, please make the following 5 changes to the ```MODEL LOADING``` section
+in ```main.py```. Changes are wrapped with hashtags
 
 ```bash
 if not os.getenv("TESTING"):
     # --- Load LLaMA 3.2 3B Instruct ---
-    MODEL_NAME = "meta-llama/Llama-3.2-1B-Instruct"
     token = os.getenv("HF_TOKEN")
 
-    # from transformers import BitsAndBytesConfig
+    embedder = initializeEmbedder()
 
+    print("Loading model with 4-bit quantization...")
+
+    ################# (1) COMMENT OUT #####################
     # Configure 4-bit quantization for RTX 3050
     # bnb_config = BitsAndBytesConfig(
     #     load_in_4bit=True,
@@ -168,13 +170,11 @@ if not os.getenv("TESTING"):
     #     bnb_4bit_use_double_quant=True,
     #     bnb_4bit_compute_dtype=torch.float16,
     # )
+   ####################################################
 
-    # Disable CUDA/MPS allocator warmup
-    from transformers import modeling_utils
-    modeling_utils._caching_allocator_enabled = False
+    tokenizer = initializeTokenizer(MODEL_NAME, token)
 
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, token=token)
-
+   ################# (2) COMMENT OUT #####################
     # Load model with 4-bit quantization
     # model = AutoModelForCausalLM.from_pretrained(
     #     MODEL_NAME,
@@ -184,32 +184,25 @@ if not os.getenv("TESTING"):
     #     dtype=torch.float16,
     #     low_cpu_mem_usage=True,
     # )
+   ##################################################
 
-    device = "mps" if torch.backends.mps.is_available() else "cpu"
-    dtype = torch.float16 if device == "mps" else torch.float32
+   ############# (3) ADD THIS LINE ###################
+    device = "cpu"
+   ##################################################
 
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_NAME,
+      ###### (4 & 5) EDIT device_map & Comment out qauntization_config ######
         # quantization_config=bnb_config,
         device_map={"": device},
+      ###########################################
         token=token,
-        dtype=dtype,
+        torch_dtype=torch.float16,
         low_cpu_mem_usage=True,
     )
 
-    pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, device_map={"": device}, dtype=dtype)
-    embedder = SentenceTransformer("all-MiniLM-L6-v2")
-    chunker = DocumentChunker(max_tokens=3000)
-else:
-    print("⚠️  Testing mode: Model loading skipped")
-    MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"  # Define for tests
-    tokenizer = None
-    model = None
-    pipe = None
-    embedder = None
-    chunker = None
+    ... Rest of file 
 ```
-Note the commented out sections, added lines, and changing the ```MODEL_NAME``` from ```3B``` to ```1B```
 
 If after following the MacOS Instructions you still recieve errors regarding access, try running ```hf auth login```. 
 

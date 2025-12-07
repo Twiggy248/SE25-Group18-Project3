@@ -43,9 +43,7 @@ function UseCaseRefine() {
       return;
     }
 
-    try {
-      console.log('🔍 Fallback: Loading use case ${id} from session history...');
-      
+    try {      
       // Get all use cases from session history
       const response = await api.getSessionHistory(currentSessionId, 100);
       
@@ -74,7 +72,6 @@ function UseCaseRefine() {
       const foundUseCase = uniqueUseCases.find(uc => uc.id === parseInt(id));
       
       if (foundUseCase) {
-        console.log('✅ Found use case: ${foundUseCase.title}');
         setUseCase(foundUseCase);
       } else {
         console.error('❌ Use case ${id} not found in ${uniqueUseCases.length} available use cases');
