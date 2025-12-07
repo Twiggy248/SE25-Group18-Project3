@@ -101,8 +101,8 @@ def initalizeModel(model_name: str = None):
             model_name,
             quantization_config=bnb_config,
             device_map="auto",
-            use_auth_token=token,
-            torch_dtype=torch.float16,
+            token=token,
+            dtype=torch.float16,
             low_cpu_mem_usage=True,
             trust_remote_code=False,  # Security: don't execute remote code
         )
