@@ -14,7 +14,6 @@ from datetime import datetime
 from typing import Dict, List, Optional
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Inches, Pt, RGBColor
 
 
 def export_to_docx(

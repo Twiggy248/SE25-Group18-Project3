@@ -40,16 +40,8 @@ class DocumentChunker:
         """
         char_count = len(text)
 
-        print(f"\n{'='*80}")
-        print(f"📄 DOCUMENT CHUNKING")
-        print(f"{'='*80}")
-        print(f"Total characters: {char_count:,}")
-        print(f"Estimated tokens: {int(char_count / 4):,}")
-        print(f"Max tokens per chunk: {self.max_tokens:,}")
-
         # If text is small enough and strategy is auto, return as single chunk
         if char_count <= self.max_chars_per_chunk and strategy == "auto":
-            print(f"✅ Document fits in single chunk - no splitting needed\n")
             return [
                 {
                     "chunk_id": 0,
@@ -60,15 +52,9 @@ class DocumentChunker:
                 }
             ]
 
-        # Force chunking for non-auto strategies or large texts
-        if char_count > self.max_chars_per_chunk:
-            print(f"⚠️ Document exceeds chunk size - splitting required")
-
         # Auto-detect best strategy
         if strategy == "auto":
             strategy = self._detect_best_strategy(text)
-
-        print(f"Strategy: {strategy}")
 
         # Apply chunking strategy
         if strategy == "section":
@@ -77,13 +63,6 @@ class DocumentChunker:
             chunks = self._chunk_by_paragraphs(text)
         else:
             chunks = self._chunk_by_sentences(text)
-
-        print(f"✅ Created {len(chunks)} chunks")
-        for i, chunk in enumerate(chunks):
-            print(
-                f"   Chunk {i+1}: {chunk['char_count']:,} chars (~{chunk['estimated_tokens']:,} tokens)"
-            )
-        print(f"{'='*80}\n")
 
         return chunks
 
@@ -237,16 +216,9 @@ class DocumentChunker:
 
                 # Skip if we've seen this title
                 if title_normalized in seen_titles:
-                    print(
-                        f"🔄 Skipping duplicate across chunks: {uc.get('title', 'Unknown')}"
-                    )
                     continue
 
                 seen_titles.add(title_normalized)
                 all_use_cases.append(uc)
-
-        print(
-            f"\n✅ Merged {len(all_use_cases)} unique use cases from {len(chunk_results)} chunks"
-        )
 
         return all_use_cases

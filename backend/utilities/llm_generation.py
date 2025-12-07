@@ -3,8 +3,6 @@ import re
 def clean_llm_json(json_str: str) -> str:
     """Clean JSON from LLM output"""
 
-    print("🔧 Cleaning LLM JSON output...")
-
     json_str = re.sub(r"^```json\s*", "", json_str.strip())
     json_str = re.sub(r"^```\s*", "", json_str.strip())
     json_str = re.sub(r"\s*```$", "", json_str.strip())
@@ -34,7 +32,4 @@ def clean_llm_json(json_str: str) -> str:
     if open_brackets > close_brackets:
         json_str += "]" * (open_brackets - close_brackets)
 
-    print("✅ JSON cleaning complete\n")
-
     return json_str
-1

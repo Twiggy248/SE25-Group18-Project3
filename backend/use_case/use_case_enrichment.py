@@ -14,7 +14,7 @@ Post-processes extracted use cases to improve quality
 """
 
 import re
-from typing import Dict, List
+from typing import List
 
 
 async def enrich_use_cases(use_cases: list) -> list:

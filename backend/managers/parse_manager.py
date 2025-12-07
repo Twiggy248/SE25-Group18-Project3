@@ -1,16 +1,16 @@
 import json, time, sqlite3, torch
 from typing import Optional
-
 from sentence_transformers import util
-from utilities.rag import build_memory_context
-from use_case.use_case_validator import UseCaseValidator
-from database.models import UseCaseSchema
-from database.db import getDatabasePath
-from database.managers import session_db_manager, usecase_db_manager
-from utilities.use_case_utilities import compute_usecase_embedding, flatten_use_case
-from managers.use_case_manager import extract_use_cases_single_stage
-from utilities.chunking_strategy import DocumentChunker
-from utilities.tools import getEmbedder
+
+from ..database.models import UseCaseSchema
+from ..database.db import getDatabasePath
+from ..database.managers import session_db_manager, usecase_db_manager
+from ..managers.use_case_manager import extract_use_cases_single_stage
+from ..use_case.use_case_validator import UseCaseValidator
+from ..utilities.rag import build_memory_context
+from ..utilities.use_case_utilities import compute_usecase_embedding, flatten_use_case
+from ..utilities.chunking_strategy import DocumentChunker
+from ..utilities.llm.hf_llm_util import getEmbedder
 
 
 embedder = getEmbedder()
@@ -39,18 +39,11 @@ def parse_large_document_chunked(text: str, session_id: str, project_context: Op
     # Chunk the document
     chunks = DocumentChunker.chunk_document(text, strategy="auto")
 
-    print(f"\n{'='*80}")
-    print(f"⚡ CHUNKED EXTRACTION - {len(chunks)} chunks")
-    print(f"{'='*80}\n")
-
     # Extract use cases from each chunk
     all_chunk_results = []
     chunk_summaries = []
 
     for i, chunk in enumerate(chunks, 1):
-        print(f"{'='*80}")
-        print(f"Processing Chunk {i}/{len(chunks)}")
-        print(f"{'='*80}")
 
         # Extract from this chunk - NO max_use_cases, let it auto-detect!
         chunk_use_cases = extract_use_cases_single_stage(
@@ -67,8 +60,6 @@ def parse_large_document_chunked(text: str, session_id: str, project_context: Op
                 "char_count": chunk["char_count"],
             }
         )
-
-        print(f"✅ Chunk {i}: Extracted {len(chunk_use_cases)} use cases\n")
 
     # Merge results from all chunks
     merged_use_cases = DocumentChunker.merge_extracted_use_cases(all_chunk_results)
@@ -97,7 +88,6 @@ def parse_large_document_chunked(text: str, session_id: str, project_context: Op
             )
 
         except Exception as e:
-            print(f"⚠️  Validation error for '{uc_dict.get('title', 'Unknown')}': {e}")
             validation_results.append(
                 {
                     "title": uc_dict.get("title", "Unknown"),
@@ -137,7 +127,6 @@ def parse_large_document_chunked(text: str, session_id: str, project_context: Op
             max_sim = float(torch.max(cos_sim))
             if max_sim >= threshold:
                 is_duplicate = True
-                print(f"🔄 Duplicate detected ({max_sim:.2f}): {uc.title[:50]}")
 
         if not is_duplicate:
             conn = sqlite3.connect(getDatabasePath())
@@ -164,7 +153,6 @@ def parse_large_document_chunked(text: str, session_id: str, project_context: Op
 
             results.append({"status": "stored", "title": uc.title})
             stored_count += 1
-            print(f"💾 Stored: {uc.title}")
         else:
             results.append({"status": "duplicate_skipped", "title": uc.title})
 
@@ -184,17 +172,6 @@ def parse_large_document_chunked(text: str, session_id: str, project_context: Op
             "chunk_summaries": chunk_summaries,
         },
     )
-
-    print(f"\n{'='*80}")
-    print(f"✅ CHUNKED EXTRACTION COMPLETE")
-    print(f"{'='*80}")
-    print(f"📊 Total chunks processed: {len(chunks)}")
-    print(f"📊 Total extracted: {len(merged_use_cases)}")
-    print(f"💾 Stored (new): {stored_count}")
-    print(f"🔄 Duplicates skipped: {len(merged_use_cases) - stored_count}")
-    print(f"⏱️  Total time: {total_time:.1f}s")
-    print(f"⚡ Speed: {total_time/len(chunks):.1f}s per chunk")
-    print(f"{'='*80}\n")
 
     return {
         "message": f"Chunked extraction: {len(merged_use_cases)} use cases from {len(chunks)} chunks in {total_time:.1f}s",

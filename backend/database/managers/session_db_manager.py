@@ -1,6 +1,7 @@
 import sqlite3, json
-from database.db import getDatabasePath
 from typing import List, Dict, Optional
+
+from ...database.db import getDatabasePath
 
 def create_session(session_id: str, user_id: str, project_context: str = "", domain: str = "", session_title: str = "New Session"):
     """Create a new session or update existing one"""
@@ -188,10 +189,8 @@ def clean_new_session_titles():
             )
 
         conn.commit()
-        print(f"Updated {len(sessions)} session titles")
         return len(sessions)
     except Exception as e:
-        print(f"Error cleaning session titles: {e}")
         conn.rollback()
         return 0
     finally:

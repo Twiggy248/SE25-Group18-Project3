@@ -8,15 +8,11 @@
 # License: MIT License - see LICENSE file in the root directory.
 # -----------------------------------------------------------------------------
 
-import json
-import os
-import sqlite3
+import json, os, sqlite3, pytest
 
-import pytest
+from ...database.db import init_db, migrate_db, setDatabasePath, getDatabasePath
 
-from database.db import init_db, migrate_db, setDatabasePath, getDatabasePath
-
-from database.managers import session_db_manager, usecase_db_manager
+from ...database.managers import session_db_manager, usecase_db_manager
 
 
 @pytest.fixture

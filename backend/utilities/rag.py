@@ -4,9 +4,11 @@
 #              handles vector store operations and semantic search functionality.
 # -----------------------------------------------------------------------------
 
-from typing import Dict, List
-
 import nltk
+
+from typing import Dict, List
+from .key_values import SIMPLE_STOPWRODS
+from .query_generation import summarize_session_queryGen
 
 # Make ChromaDB import optional for testing
 try:
@@ -21,9 +23,7 @@ except ImportError:
 try:
     nltk.data.find("tokenizers/punkt")
 except LookupError:
-    print("📥 Downloading NLTK punkt tokenizer...")
     nltk.download("punkt")
-    print("✅ NLTK punkt tokenizer downloaded")
 
 
 # --- Semantic chunking with NLTK ---
@@ -47,15 +47,8 @@ def semantic_chunk(text: str, chunk_size: int = 15, overlap: int = 5) -> List[st
 
     total_sentences = len(sentences)
 
-    print(f"\n📊 CHUNKING DEBUG:")
-    print(f"   Total characters: {len(text):,}")
-    print(f"   Total sentences detected: {total_sentences}")
-    print(f"   Chunk size: {chunk_size} sentences")
-    print(f"   Overlap: {overlap} sentences")
-
     # If text is short enough, return as single chunk
     if total_sentences <= chunk_size:
-        print(f"   → Text has {total_sentences} sentences, using 1 chunk\n")
         return [text]
 
     chunks = []
@@ -70,17 +63,12 @@ def semantic_chunk(text: str, chunk_size: int = 15, overlap: int = 5) -> List[st
         if chunk:
             chunks.append(chunk)
             chunk_num += 1
-            print(
-                f"   Chunk {chunk_num}: sentences {start+1}-{end} ({len(chunk):,} chars)"
-            )
 
         start += step
 
         # Safety check: prevent infinite loop
         if start >= total_sentences:
             break
-
-    print(f"   → Created {len(chunks)} chunks\n")
 
     return chunks
 
@@ -103,9 +91,7 @@ def init_vector_db(session_id: str = None):
 
 
 # --- Add chunks to vector DB with metadata ---
-def add_chunks_to_db(
-    collection, chunks: List[str], session_id: str = None, metadata: Dict = None
-):
+def add_chunks_to_db(collection, chunks: List[str], session_id: str = None, metadata: Dict = None):
     """Add chunks with session and metadata information"""
     ids = [
         f"chunk_{session_id}_{i}" if session_id else f"chunk_{i}"
@@ -124,9 +110,7 @@ def add_chunks_to_db(
 
 
 # --- Retrieve relevant chunks with memory context ---
-def retrieve_chunks(
-    collection, query: str, n_results: int = 5, session_id: str = None
-) -> List[str]:
+def retrieve_chunks(collection, query: str, n_results: int = 5, session_id: str = None) -> List[str]:
     """Retrieve chunks, optionally filtering by session"""
     where_filter = {"session_id": session_id} if session_id else None
 
@@ -139,11 +123,7 @@ def retrieve_chunks(
 
 
 # --- Build memory-enhanced context ---
-def build_memory_context(
-    conversation_history: List[Dict],
-    session_context: Dict,
-    previous_use_cases: List[Dict],
-) -> str:
+def build_memory_context(conversation_history: List[Dict], session_context: Dict, previous_use_cases: List[Dict]) -> str:
     """
     Build a rich context string from conversation history and session data
 
@@ -195,34 +175,10 @@ def extract_key_concepts(text: str, top_n: int = 10) -> List[str]:
     words = text.lower().split()
 
     # Filter out common words (simple stopwords)
-    stopwords = {
-        "the",
-        "a",
-        "an",
-        "and",
-        "or",
-        "but",
-        "in",
-        "on",
-        "at",
-        "to",
-        "for",
-        "of",
-        "with",
-        "by",
-        "from",
-        "is",
-        "are",
-        "was",
-        "were",
-        "be",
-        "been",
-        "being",
-    }
 
     word_freq = {}
     for word in words:
-        if len(word) > 3 and word not in stopwords:
+        if len(word) > 3 and word not in SIMPLE_STOPWRODS:
             word_freq[word] = word_freq.get(word, 0) + 1
 
     # Sort by frequency and return top N
@@ -246,11 +202,7 @@ def summarize_conversation(conversation_history: List[Dict], llm_pipe=None) -> s
     if llm_pipe:
         # Use LLM to summarize
         combined_text = "\n".join(user_messages[-10:])  # Last 10 user messages
-        prompt = f"""Summarize the following conversation about software requirements in 2-3 sentences:
-
-{combined_text}
-
-Summary:"""
+        prompt = summarize_session_queryGen(combined_text)
         try:
             summary = llm_pipe(prompt, max_new_tokens=150, temperature=0.3)[0][
                 "generated_text"

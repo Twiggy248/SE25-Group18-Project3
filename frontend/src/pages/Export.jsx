@@ -70,19 +70,19 @@ function Export() {
       <SessionHeader />
 
       {/* Content */}
-      <div className="flex-1 p-8 overflow-y-auto">
+      <div className="flex-1 p-8 overflow-y-auto bg-gray-50 dark:bg-gray-900">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">Export 📥</h1>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">Export 📥</h1>
 
-          <div className="bg-white rounded-lg shadow-sm border p-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-8">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
               Export Options
             </h2>
 
             {/* Format Selection */}
             <div className="space-y-4 mb-8">
               {/* DOCX */}
-              <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition">
+              <label className="flex items-center p-4 border dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                 <input
                   type="radio"
                   name="format"
@@ -93,8 +93,8 @@ function Export() {
                   data-testid="docx-radio"
                 />
                 <div>
-                  <p className="font-semibold text-gray-900">Microsoft Word (DOCX)</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="font-semibold text-gray-900 dark:text-white">Microsoft Word (DOCX)</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     Professional document with formatted sections
                   </p>
                 </div>
@@ -112,8 +112,8 @@ function Export() {
                   data-testid="markdown-radio"
                 />
                 <div>
-                  <p className="font-semibold text-gray-900">Markdown (MD)</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="font-semibold text-gray-900 dark:text-white">Markdown (MD)</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     Plain text format, great for GitHub/documentation
                   </p>
                 </div>
@@ -132,8 +132,8 @@ function Export() {
             </button>
 
             {/* Info */}
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
                 <strong>Note:</strong> The export will include all use cases from the current session.
               </p>
             </div>

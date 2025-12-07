@@ -78,6 +78,10 @@ export const api = {
   // Query
   queryRequirements: (data) => apiClient.post('/query', data),
 
+  // Summarization
+  summarizeChatUseCases: (data) => apiClient.post('/summarize/chat_use_cases/', data),
+  summarizeSession: (sessionId) => apiClient.get(`/summarize/session/${sessionId}/`),
+
   // Export
   exportDOCX: (sessionId) => 
     apiClient.get(`/session/${sessionId}/export/docx`, { responseType: 'blob' }),
@@ -91,6 +95,8 @@ export const api = {
   //Logout 
   me: () => apiClient.get('http://localhost:8000/auth/me', { withCredentials: true }),
   logout: () => apiClient.post('/auth/logout'),
+
+
 };
 
 export default apiClient;

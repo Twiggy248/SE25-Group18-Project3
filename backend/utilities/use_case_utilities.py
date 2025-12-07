@@ -1,16 +1,15 @@
 import re
 from typing import Tuple
-from utilities.key_values import ACTION_VERBS, ACTORS
-from database.models import UseCaseSchema
-from utilities.tools import getEmbedder
+from .key_values import ACTION_VERBS, ACTORS
+from ..database.models import UseCaseSchema
+from ..managers.services import getEmbedder
 class UseCaseEstimator:
     """Intelligently estimate number of use cases in requirements text"""
 
     @staticmethod
     def count_conjunction_actions(text: str) -> int:
         """
-        🔥 NEW: Detect compound actions split by 'and'
-        Example: "proceeds to checkout and selects payment" = 2 actions
+        Detect compound actions split by 'and'
         """
         text_lower = text.lower()
         compound_action_count = 0
@@ -33,9 +32,7 @@ class UseCaseEstimator:
     def estimate_use_cases(text: str) -> Tuple[int, int, dict]:
         """
         Estimate number of use cases in text
-
-        Returns:
-            (min_estimate, max_estimate, analysis_details)
+        Returns: (min_estimate, max_estimate, analysis_details)
         """
 
         text_lower = text.lower()
@@ -170,55 +167,24 @@ def get_smart_max_use_cases(text: str) -> int:
 
     min_est, max_est, details = UseCaseEstimator.estimate_use_cases(text)
 
-    print(f"\n{'='*80}")
-    print(f"🧠 SMART USE CASE ESTIMATION")
-    print(f"{'='*80}")
-    print(
-        f"Input: {details['char_count']} chars, {details['sentence_count']} sentences"
-    )
-    print(f"\nAnalysis:")
-    print(f"  • Action verbs found: {details['action_verb_count']}")
-    if details["found_actions"]:
-        actions_preview = ", ".join(list(details["found_actions"])[:8])
-        if len(details["found_actions"]) > 8:
-            actions_preview += f", +{len(details['found_actions']) - 8} more"
-        print(f"    Actions: {actions_preview}")
-    print(f"  • Unique actions: {details['unique_actions']}")
-    if details["conjunction_action_count"] > 1:
-        print(
-            f"  • Compound actions detected: {details['conjunction_action_count']} (split by 'and')"
-        )
-    print(f"  • Actors mentioned: {details['actor_count']}")
-    if details["list_items"] > 0:
-        print(f"  • List items: {details['list_items']}")
-    if "sentences_with_actions" in details:
-        print(f"  • Sentences with actions: {details['sentences_with_actions']}")
-
-    print(f"\n📊 Raw estimate: {min_est}-{max_est} use cases")
 
     # Improved logic based on text characteristics
     char_count = details["char_count"]
     unique_actions = details["unique_actions"]
     conjunction_actions = details["conjunction_action_count"]
 
-    # 🔥 FIXED: Prioritize conjunction detection for short compound text
+    # Prioritize conjunction detection for short compound text
     if char_count < 150 and conjunction_actions >= 2:
         smart_max = conjunction_actions
-        print(
-            f"   Based on {conjunction_actions} compound actions (detected 'and' separator)"
-        )
     # For long descriptive text (>2000 chars), be more generous
     elif char_count > 2000:
         smart_max = max_est
-        print(f"   Long text detected ({char_count} chars) - using upper estimate")
     elif unique_actions > 0:
         # For normal text, use unique actions with multiplier
         smart_max = min(int(unique_actions * 1.5), max_est)
-        print(f"   Based on {unique_actions} unique actions")
     else:
         # Fallback to minimum
         smart_max = min_est
-        print(f"   Using minimum estimate (no clear actions detected)")
 
     # Apply size-based caps
     if char_count < 150 and conjunction_actions >= 2:
@@ -236,7 +202,6 @@ def get_smart_max_use_cases(text: str) -> int:
     if char_count < 50 and unique_actions <= 1:
         # Very short text with single action: allow exactly 1
         smart_max = max(1, smart_max)
-        print(f"   Single action detected - allowing 1 use case")
     elif char_count < 200:
         # Short text: minimum 1 use case
         smart_max = max(1, smart_max)
@@ -245,9 +210,6 @@ def get_smart_max_use_cases(text: str) -> int:
         smart_max = max(2, smart_max)
 
     smart_max = min(smart_max, 20)  # Max 20
-
-    print(f"✅ Final estimate: {smart_max} use cases")
-    print(f"{'='*80}\n")
 
     return smart_max
 
@@ -258,10 +220,6 @@ def get_smart_token_budget(text: str, estimated_use_cases: int) -> int:
     overhead = 80
     token_budget = base_tokens + overhead
     token_budget = max(300, min(token_budget, 1200))
-
-    print(
-        f"💰 Token budget: {token_budget} tokens ({estimated_use_cases} use cases × 120 + overhead)\n"
-    )
 
     return token_budget
 

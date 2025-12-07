@@ -1,6 +1,7 @@
 import sqlite3, json
 from typing import List, Dict, Optional
-from database.db import getDatabasePath
+
+from ...database.db import getDatabasePath
 
 """
 usecase_db_manager.py
@@ -116,5 +117,4 @@ def update_use_case(use_case_id: int, updated_data: Dict) -> bool:
         return c.rowcount > 0
     except Exception as e:
         conn.close()
-        print(f"Error updating use case: {e}")
         return False

@@ -12,7 +12,7 @@
 
 import pytest
 
-from utilities.chunking_strategy import DocumentChunker
+from ...utilities.chunking_strategy import DocumentChunker
 
 
 def test_init():

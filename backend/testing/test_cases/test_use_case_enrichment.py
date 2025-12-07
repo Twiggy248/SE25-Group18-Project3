@@ -1,6 +1,6 @@
 import pytest
 
-from use_case.use_case_enrichment import (enrich_use_case, enrich_use_cases,
+from ...use_case.use_case_enrichment import (enrich_use_case, enrich_use_cases,
                                  extract_error_cases,
                                  extract_optional_features, merge_use_cases,
                                  normalize_use_case, should_merge_use_cases)
