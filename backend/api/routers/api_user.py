@@ -5,6 +5,9 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from database.db import getDatabasePath
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # --- Google OAuth --- 
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")

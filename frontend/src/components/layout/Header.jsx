@@ -10,7 +10,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ThemeControls } from '../../context/ThemeContext';
+import ThemeProvider, { ThemeControls, ThemeContext } from '../../context/ThemeContext';
 import logoImage from "../../assets/logoo.png";
 
 function Header() {

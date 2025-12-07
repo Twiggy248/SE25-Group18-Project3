@@ -4,14 +4,16 @@ import { act } from 'react-dom/test-utils'
 import FileUploader from '../FileUploader'
 
 // Mock react-dropzone
-const mockUseDropzone = vi.fn(() => ({
-  getRootProps: () => ({}),
-  getInputProps: () => ({}),
-  isDragActive: false
+const mocks = vi.hoisted(() => ({
+  useDropzone: vi.fn(() => ({
+    getRootProps: () => ({ role: 'presentation' }),
+    getInputProps: () => ({}),
+    isDragActive: false
+  }))
 }));
 
 vi.mock('react-dropzone', () => ({
-  useDropzone: mockUseDropzone
+  useDropzone: mocks.useDropzone
 }));
 
 describe('FileUploader Component', () => {
@@ -19,6 +21,12 @@ describe('FileUploader Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    mocks.useDropzone.mockReturnValue({
+      getRootProps: () => ({ role: 'presentation' }),
+      getInputProps: () => ({}),
+      isDragActive: false
+    });
   });
 
   it('renders basic uploader state', () => {
@@ -38,7 +46,7 @@ describe('FileUploader Component', () => {
   it('handles file selection', async () => {
     const file = new File(['test content'], 'test.txt', { type: 'text/plain' });
     let onDropCallback;
-    mockUseDropzone.mockImplementation((options) => {
+    mocks.useDropzone.mockImplementation((options) => {
       onDropCallback = options.onDrop;
       return {
         getRootProps: () => ({
@@ -62,7 +70,7 @@ describe('FileUploader Component', () => {
   });
 
   it('shows drag active state', () => {
-    mockUseDropzone.mockReturnValue({
+    mocks.useDropzone.mockReturnValue({
       getRootProps: () => ({
         className: ''
       }),
@@ -93,7 +101,7 @@ describe('FileUploader Component', () => {
     render(<FileUploader onFileSelect={mockOnFileSelect} uploading={false} />);
 
     // Verify maxSize is passed correctly in the hook call
-    expect(mockUseDropzone).toHaveBeenCalledWith(
+    expect(mocks.useDropzone).toHaveBeenCalledWith(
       expect.objectContaining({
         maxSize: 10 * 1024 * 1024
       })
@@ -104,7 +112,7 @@ describe('FileUploader Component', () => {
     render(<FileUploader onFileSelect={mockOnFileSelect} uploading={false} />);
 
     // Verify dropzone was called with correct accept options
-    expect(mockUseDropzone).toHaveBeenCalledWith(
+    expect(mocks.useDropzone).toHaveBeenCalledWith(
       expect.objectContaining({
         accept: {
           'application/pdf': ['.pdf'],

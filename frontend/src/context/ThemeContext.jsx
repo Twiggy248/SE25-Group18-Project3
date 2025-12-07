@@ -274,3 +274,4 @@ export const ThemeControls = () => {
 };
 
 export default ThemeProvider;
+export { ThemeContext }

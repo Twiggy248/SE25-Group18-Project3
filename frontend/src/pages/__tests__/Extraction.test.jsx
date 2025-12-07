@@ -135,7 +135,10 @@ describe('Extraction Component', () => {
     };
 
     it('handles text extraction successfully', async () => {
-      api.extractFromText.mockResolvedValueOnce(mockExtractResponse);
+      api.extractFromText.mockImplementation(async () =>{
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return mockExtractResponse;
+      });
       
       render(<Extraction />);
       
@@ -148,7 +151,7 @@ describe('Extraction Component', () => {
       await userEvent.click(extractButton);
       
       // Check loading state (LoadingSpinner shows message in a <p> tag)
-      expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+      expect(screen.getByText('⏳ Extracting...')).toBeInTheDocument();
       // Wait for results
       await waitFor(() => {
         expect(screen.getByText('Extraction Summary')).toBeInTheDocument();
@@ -167,7 +170,10 @@ describe('Extraction Component', () => {
       expect(screen.getByText('Test Use Case 2')).toBeInTheDocument();
       
       // Check summary stats
-      expect(screen.getByText('2')).toBeInTheDocument(); // Extracted count
+      const extractedLabel = screen.getByText('Extracted:');
+      expect(extractedLabel.parentElement).toHaveTextContent(/^Extracted:\s+2$/);
+
+
       expect(screen.getByText('1.5s')).toBeInTheDocument(); // Processing time
       
       // Verify session update
