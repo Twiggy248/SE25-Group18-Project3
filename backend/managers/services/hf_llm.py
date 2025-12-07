@@ -17,21 +17,49 @@ _cached_hf_models: list[str] = []
 # Known compatible model architectures
 COMPATIBLE_ARCHITECTURES = {
     'llama', 'mistral', 'phi', 'qwen', 'gemma', 'falcon', 
-    'gpt2', 'gpt_neo', 'gpt_neox', 'opt', 'bloom', 'mpt'
+    'gpt2', 'gpt_neo', 'gpt_neox', 'opt', 'bloom', 'mpt', 'stablelm'
 }
+
+# Model name patterns to exclude (non-text or incompatible models)
+EXCLUDE_PATTERNS = [
+    'gguf',          # GGUF format models (need llama.cpp)
+    'vision',        # Vision/multimodal models
+    'vlm',           # Vision language models
+    'audio',         # Audio models
+    'speech',        # Speech models
+    'ocr',           # OCR models
+    'embedding',     # Embedding models
+    'video',         # Video models
+    'music',         # Music generation models
+]
 
 def is_model_compatible(model_id: str, token: str) -> bool:
     """
     Check if a model is compatible with the current Transformers version
     """
+    model_id_lower = model_id.lower()
+    
+    # Quick filter: exclude known incompatible patterns
+    if any(pattern in model_id_lower for pattern in EXCLUDE_PATTERNS):
+        return False
+    
     try:
-        config = AutoConfig.from_pretrained(model_id, token=token, trust_remote_code=False)
+        # Suppress warnings during config loading
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            config = AutoConfig.from_pretrained(
+                model_id, 
+                token=token, 
+                trust_remote_code=False
+            )
+        
         model_type = getattr(config, 'model_type', '').lower()
         
         # Check if the model type is in our compatible list
         return any(arch in model_type for arch in COMPATIBLE_ARCHITECTURES)
-    except Exception as e:
-        print(f"Could not check compatibility for {model_id}: {e}")
+    except Exception:
+        # Silently fail for incompatible models
         return False
 
 def initalizeModel(model_name: str = None):
@@ -91,18 +119,22 @@ def initalizeModel(model_name: str = None):
     # Cache compatible models at initialization
     hf_api = HfApi(token=token)
     try:
-        all_models = hf_api.list_models(
-            filter="text-generation",
-            sort="trendingScore",
-            limit=100  # Get more to filter from
-        )
+        # Suppress API warnings
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            all_models = hf_api.list_models(
+                filter="text-generation",
+                sort="trendingScore",
+                limit=50  # Reduced from 100 for faster loading
+            )
         
-        # Filter to only include compatible models
+        # Filter to only include compatible models (silently)
         _cached_hf_models = []
         for m in all_models:
             if is_model_compatible(m.modelId, token):
                 _cached_hf_models.append(m.modelId)
-                if len(_cached_hf_models) >= 20:  # Limit to top 20 compatible models
+                if len(_cached_hf_models) >= 15:  # Limit to top 15 compatible models
                     break
         
         # Always include the default model if not already present
@@ -115,7 +147,7 @@ def initalizeModel(model_name: str = None):
         _cached_hf_models = [
             DEFAULT_MODEL_NAME,
             "meta-llama/Llama-3.2-3B-Instruct",
-            "mistralai/Mistral-7B-Instruct-v0.2",
+            "mistralai/Mistral-7B-Instruct-v0.3",
             "microsoft/phi-2",
             "google/gemma-2b-it",
         ]
