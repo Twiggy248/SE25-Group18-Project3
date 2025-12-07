@@ -158,3 +158,63 @@ def uc_batch_extract_queryGen(batch_count: id, memory_context: str, text:str) ->
                     {text}"""
     
     return [systemInstruction, queryText]
+
+########################################
+#     Summarization Queries (NEW)      #
+########################################
+
+def summarize_chat_usecases_queryGen(conversation_text: str, use_case_list: str, num_use_cases: int) -> list[str]:
+    """
+    Generates a query for summarizing a chat session with extracted use cases.
+    
+    :param conversation_text: The conversation text from the chat
+    :param use_case_list: List of extracted use case titles
+    :param num_use_cases: Number of use cases extracted
+    :return: The Generated Query for an LLM
+    :rtype: list[str]
+    """
+    
+    systemInstruction = f"{SYSTEM_ROLE_CONTEXT} summarizing requirements analysis sessions. Provide clear, concise summaries that capture the main themes and objectives."
+    
+    queryText = f"""Summarize the following requirements gathering session.
+
+Conversation excerpt:
+{conversation_text}
+
+Extracted use cases ({num_use_cases} total):
+{use_case_list}
+
+Provide a comprehensive summary (3-5 sentences) that covers:
+1. The main purpose and context of these requirements
+2. Key themes and patterns across the use cases
+3. The primary stakeholders and their needs
+
+Keep the summary professional and focused on the business value."""
+    
+    return [systemInstruction, queryText]
+
+
+def summarize_use_case_queryGen(use_case: dict) -> list[str]:
+    """
+    Generates a query for summarizing a single use case.
+    NOTE: Currently not used - we use template-based summaries for speed.
+    Keep this function in case you want LLM-generated use case summaries.
+    
+    :param use_case: The use case dictionary to summarize
+    :return: The Generated Query for an LLM
+    :rtype: list[str]
+    """
+    
+    systemInstruction = f"{SYSTEM_ROLE_CONTEXT} summarizing individual use cases concisely. Focus on purpose, key steps, and outcomes."
+    
+    queryText = f"""Provide a concise 2-3 sentence summary of the following use case:
+
+Title: {use_case.get('title', 'Unknown')}
+Preconditions: {', '.join(use_case.get('preconditions', []))}
+Main Flow: {', '.join(use_case.get('main_flow', []))}
+Outcomes: {', '.join(use_case.get('outcomes', []))}
+Stakeholders: {', '.join(use_case.get('stakeholders', []))}
+
+The summary should explain what happens, why it matters, and who is involved."""
+    
+    return [systemInstruction, queryText]

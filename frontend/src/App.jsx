@@ -27,6 +27,7 @@ import UseCaseDetail from './pages/UseCaseDetail';
 import UseCaseRefine from './pages/UseCaseRefine';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login'
+import Summarize from './pages/Summarize';
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
             <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
               <Routes>
                 <Route path="/" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+                <Route path="/summarize" element={<ProtectedRoute><Summarize /></ProtectedRoute>} />
                 <Route path="/extraction" element={<ProtectedRoute><Extraction /></ProtectedRoute>} />
                 <Route path="/export" element={<ProtectedRoute><Export /></ProtectedRoute>} />
                 <Route path="/query" element={<ProtectedRoute><Query /></ProtectedRoute>} />

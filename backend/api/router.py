@@ -1,7 +1,7 @@
 import json, re
 from fastapi import Request, HTTPException, APIRouter
 
-from .routers import api_auth, api_session, api_parse, api_llm_model, api_user
+from .routers import api_auth, api_session, api_parse, api_llm_model, api_user, api_summarize
 from .security import require_user, session_belongs_to_user
 
 from ..database.models import RefinementRequest, QueryRequest
@@ -17,6 +17,7 @@ router.include_router(api_session.router)
 router.include_router(api_auth.router)
 router.include_router(api_parse.router)
 router.include_router(api_user.router)
+router.include_router(api_summarize.router)
 
 @router.post("/use-case/refine")
 def refine_use_case_endpoint(request: RefinementRequest):
