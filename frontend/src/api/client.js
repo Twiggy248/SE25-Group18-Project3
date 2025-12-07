@@ -44,6 +44,12 @@ export const api = {
   deleteSession: (sessionId) => apiClient.delete(`/session/${sessionId}`),
   exportSession: (sessionId) => apiClient.get(`/session/${sessionId}/export`),
 
+  renameSession: (sessionId, newTitle) => 
+    apiClient.post("/session/rename", {
+      session_id: sessionId, 
+      new_title: newTitle,
+    }),
+
   // Use Case Extraction
   extractFromText: (data) => apiClient.post('/parse_use_case_rag/', data),
   

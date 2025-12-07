@@ -1,0 +1,1 @@
+# So we can use database as a module

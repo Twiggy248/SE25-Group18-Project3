@@ -181,7 +181,7 @@ if not os.getenv("TESTING"):
     #     quantization_config=bnb_config,
     #     device_map="auto",
     #     token=token,
-    #     torch_dtype=torch.float16,
+    #     dtype=torch.float16,
     #     low_cpu_mem_usage=True,
     # )
 
@@ -193,11 +193,11 @@ if not os.getenv("TESTING"):
         # quantization_config=bnb_config,
         device_map={"": device},
         token=token,
-        torch_dtype=dtype,
+        dtype=dtype,
         low_cpu_mem_usage=True,
     )
 
-    pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, device_map={"": device}, torch_dtype=dtype)
+    pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, device_map={"": device}, dtype=dtype)
     embedder = SentenceTransformer("all-MiniLM-L6-v2")
     chunker = DocumentChunker(max_tokens=3000)
 else:

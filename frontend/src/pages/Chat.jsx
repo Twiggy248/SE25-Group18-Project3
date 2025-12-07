@@ -167,6 +167,15 @@ function Chat() {
         }
       }
 
+      const { setSessions } = useSessionStore.getState();
+
+      try{
+        const sessionsList = await api.getSessions();
+        setSessions(sessionsList.data.sessions);
+      }catch (err){
+        console.warn("Couldn't refresh sessions sidebar")
+      }
+
       const assistantMessage = {
         role: 'assistant',
         content: `✅ Extracted ${normalized.extracted_count} use cases in ${normalized.processing_time_seconds}s`,

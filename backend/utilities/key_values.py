@@ -1,0 +1,38 @@
+# Action verbs that indicate use cases
+ACTION_VERBS = [ "login", "logout", "register", "sign in", 
+                "sign up", "authenticate", "search", "find", 
+                "browse", "filter", "sort", "view", "display", 
+                "show", "add", "create", "insert", "new", "submit", 
+                "post", "edit", "update", "modify", "change", 
+                "revise", "adjust", "delete", "remove", "cancel", 
+                "clear", "erase", "download", "upload", "export", 
+                "import", "backup", "back up", "purchase", "buy", 
+                "checkout", "pay", "order", "track", "monitor", 
+                "review", "rate", "comment", "approve", "reject", 
+                "verify", "validate", "check", "send", "receive", 
+                "share", "notify", "alert", "configure", "customize", 
+                "manage", "administer", "control", "select", "choose", 
+                "pick", "click", "tap", "message", "chat", "call", 
+                "dial", "connect", "sync", "synchronize", "refresh", 
+                "reload", "flag", "report", "block", "mute", "unmute", 
+                "enable", "disable", "toggle", "switch", "turn on", 
+                "turn off", "queue", "handle", "process", "forward", 
+                "encrypt", "decrypt", "protect", "secure", "log", 
+                "record", "store", "save", "cache"]
+
+# Actors that indicate use cases
+ACTORS = [ "user", "customer", "admin", "administrator", "manager", 
+          "employee", "staff", "member", "visitor", "guest", "buyer", 
+          "seller", "vendor", "supplier", "student", "teacher", 
+          "instructor", "patient", "doctor", "nurse", "system", 
+          "application", "platform",]
+
+SECURITY = [ "security", "authentication", "authorization", "encrypt", 
+            "validate", "verify", "permission", "access control", 
+            "secure", "token", "ssl", "tls", "https", "pci", "compliance", 
+            "hash", "salt", "protection", "backup", "recovery", "audit", 
+            "log", "monitor"]
+
+SIMPLE_STOPWRODS = {"the", "a", "an", "and", "or", "but", "in", "on", "at",
+                    "to", "for", "of", "with", "by", "from", "is", "are", 
+                    "was", "were", "be", "been", "being"}
