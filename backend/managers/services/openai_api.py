@@ -17,16 +17,21 @@ CHAT_MODEL_PATTERNS = [
 
 # Models to explicitly exclude (non-chat models)
 EXCLUDE_PATTERNS = [
-    'whisper',      # Audio transcription
-    'tts',          # Text-to-speech
-    'dall-e',       # Image generation
-    'davinci',      # Legacy completion models
-    'curie',        # Legacy completion models
-    'babbage',      # Legacy completion models
-    'ada',          # Legacy completion models
-    'embedding',    # Embedding models
-    'text-embedding',
-    'moderation',   # Moderation models
+    'whisper',          # Audio transcription
+    'tts',              # Text-to-speech
+    'dall-e',           # Image generation
+    'davinci',          # Legacy completion models
+    'curie',            # Legacy completion models
+    'babbage',          # Legacy completion models
+    'ada',              # Legacy completion models
+    'embedding',        # Embedding models
+    'text-embedding',   # Embedding models
+    'moderation',       # Moderation models
+    'search',           # Search models
+    'audio',            # Audio models
+    'realtime',         # Realtime models
+    'gpt-3.5-turbo-instruct',  # Legacy instruction model,
+    'transcribe',
 ]
 
 def preStart():
