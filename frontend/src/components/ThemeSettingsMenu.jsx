@@ -710,13 +710,21 @@ const ThemeSettingsMenu = ({ darkMode, stakeholderColorMode, toggleDarkMode, tog
                     <div className="flex items-center gap-4">
                       {darkMode ? (
                         <svg className="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <svg className="w-6 h-6 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
                         </svg>
+                      ) : (
+                         <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 -960 960 960"
+                          className="w-6 h-6 text-yellow-500"
+                          fill="currentColor"
+                        >
+                          <path d="M440-760v-160h80v160zm266 110-55-55 112-115 56 57zm54 210v-80h160v80zM440-40v-160h80v160zM254-652 140-763l57-56 113 113zm508 512L651-255l54-54 114 110zM40-440v-80h160v80zm157 300-56-57 112-112 29 27 29 28zm283-100q-100 0-170-70t-70-170 70-170 170-70 170 70 70 170-70 170-170 70m0-80q66 0 113-47t47-113-47-113-113-47-113 47-47 113 47 113 113 47m0-160"/>
+                        </svg>
                       )}
+
                       <div>
                         <p className="font-medium text-gray-900 dark:text-white">Dark Mode</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -724,19 +732,44 @@ const ThemeSettingsMenu = ({ darkMode, stakeholderColorMode, toggleDarkMode, tog
                         </p>
                       </div>
                     </div>
+
+                    {/* Toggle Switch */}
                     <button
                       onClick={toggleDarkMode}
-                      className={`relative inline-flex h-7 w-14 items-center rounded-full transition ${
+                      className={`relative inline-flex h-7 w-16 rounded-full transition ${
                         darkMode ? 'bg-indigo-600' : 'bg-gray-300'
                       }`}
                     >
+                      {/* Sliding ICON *acts as knob* */}
                       <span
-                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition shadow-md ${
-                          stakeholderColorMode ? 'translate-x-8' : 'translate-x-1'
+                        className={`absolute top-1 h-5 w-5 transform transition-all duration-300 ${
+                          darkMode ? 'translate-x-9' : 'translate-x-1'
                         }`}
-                      />
+                      >
+                        {darkMode ? (
+                          // Moon knob
+                          <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                          </svg>
+                        ) : (
+                          // Sun knob
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 -960 960 960"
+                            className="w-5 h-5 text-yellow-500"
+                            fill="currentColor"
+                          >
+                            <path d="M440-760v-160h80v160zm266 110-55-55 112-115 56 57zm54 210v-80h160v80zM440-40v-160h80v160zM254-652 140-763l57-56 113 113zm508 512L651-255l54-54 114 110zM40-440v-80h160v80zm157 300-56-57 112-112 29 27 29 28zm283-100q-100 0-170-70t-70-170 70-170 170-70 170 70 70 170-70 170-170 70m0-80q66 0 113-47t47-113-47-113-113-47-113 47-47 113 47 113 113 47m0-160"/>
+                          </svg>
+
+                        )}
+                      </span>
                     </button>
                   </div>
+
+
 
                   {/* Quick Model Selector */}
                   <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
