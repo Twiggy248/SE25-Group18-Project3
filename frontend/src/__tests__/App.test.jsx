@@ -51,11 +51,11 @@ vi.mock('../pages/UseCaseRefine', () => ({
 }));
 
 // Mock layout components
-vi.mock('../components/Layout/Sidebar', () => ({
+vi.mock('../components/layout/Sidebar', () => ({
   default: () => <div data-testid="sidebar">Sidebar</div>
 }));
 
-vi.mock('../components/Layout/Header', () => ({
+vi.mock('../components/layout/Header', () => ({
   default: () => <div data-testid="header">Header</div>
 }));
 
