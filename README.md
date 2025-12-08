@@ -11,7 +11,7 @@
 [![Tests](https://github.com/Twiggy248/SE25-Group18-Project3/actions/workflows/tests.yml/badge.svg)](https://github.com/Twiggy248/SE25-Group18-Project3/actions)
 [![Coverage](https://codecov.io/github/Twiggy248/SE25-Group18-Project3/graph/badge.svg?token=1FJU8ZHQ0A&flag=backend)](https://codecov.io/github/Twiggy248/SE25-Group18-Project3)
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg?logo=github&logoColor=white)](https://github.com/Twiggy248/SE25-Group18-Project3/actions)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Pradyumna-Chacham/CSC510-SE-Group17/blob/main/proj2/LICENSE.md)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Twiggy248/SE25-Group18-Project3/blob/main/docs/LICENSE.md)
 [![DOI](https://zenodo.org/badge/1044513773.svg)](https://doi.org/10.5281/zenodo.17581553)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
