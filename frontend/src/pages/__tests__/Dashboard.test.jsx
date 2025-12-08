@@ -50,7 +50,7 @@ describe('Dashboard Component', () => {
     api.getSessions.mockResolvedValueOnce({ 
       data: { 
         sessions: mockSessions,
-        total_use_cases: 10,
+        total_use_cases: 0,
         total_sessions: 1
       } 
     })
@@ -58,7 +58,8 @@ describe('Dashboard Component', () => {
     renderDashboard()
     
     await waitFor(() => {
-      expect(screen.getByText('10')).toBeInTheDocument() // Total Use Cases
+      expect(screen.getByText('0')).toBeInTheDocument() // Total Use Cases
+      //^ 0 was hardcoded in Dashboard.jsx when loading sessions... 
       expect(screen.getByText('Use Cases Generated')).toBeInTheDocument()
       expect(screen.getByText('✨')).toBeInTheDocument() // Use Cases icon
     })

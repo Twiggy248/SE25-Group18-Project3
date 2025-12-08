@@ -132,19 +132,19 @@ function Extraction() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
           Extract Use Cases ✨
         </h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* LEFT PANEL: INPUT */}
           <div>
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6">
               {/* Session Info */}
               <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   Session Information
                 </h2>
                 
@@ -152,7 +152,7 @@ function Extraction() {
                   <div>
                     <label 
                       htmlFor="projectContext" 
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                     >
                       Project Context
                     </label>
@@ -162,14 +162,14 @@ function Extraction() {
                       value={projectContext}
                       onChange={(e) => setProjectContext(e.target.value)}
                       placeholder="e.g., E-commerce Platform"
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      className="w-full px-4 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     />
                   </div>
 
                   <div>
                     <label 
                       htmlFor="domain" 
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                     >
                       Domain
                     </label>
@@ -179,12 +179,12 @@ function Extraction() {
                       value={domain}
                       onChange={(e) => setDomain(e.target.value)}
                       placeholder="e.g., Online Retail"
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      className="w-full px-4 py-2 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     />
                   </div>
 
                   {currentSessionId && (
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
                       Session ID: <span className="font-mono">{currentSessionId.substring(0, 12)}...</span>
                     </div>
                   )}
@@ -192,14 +192,14 @@ function Extraction() {
               </div>
 
               {/* Tabs */}
-              <div className="mb-4 border-b">
+              <div className="mb-4 border-b dark:border-gray-700">
                 <div className="flex gap-4">
                   <button
                   onClick={() => setActiveTab('text')}
                     className={`pb-2 px-1 font-medium transition ${
                       activeTab === 'text'
                         ? 'border-b-2 border-primary text-primary'
-                        : 'text-gray-500 hover:text-gray-700'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                   >
                     📝 Text Input
@@ -209,10 +209,10 @@ function Extraction() {
                     className={`pb-2 px-1 font-medium transition ${
                       activeTab === 'file'
                         ? 'border-b-2 border-primary text-primary'
-                        : 'text-gray-500 hover:text-gray-700'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                   >
-                    📁 File Upload
+                    📄 File Upload
                   </button>
                 </div>
               </div>
@@ -222,7 +222,7 @@ function Extraction() {
                 <div>
                   <label 
                     htmlFor="requirementsText" 
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                   >
                     Requirements Text
                   </label>
@@ -232,7 +232,7 @@ function Extraction() {
                     value={rawText}
                     onChange={(e) => setRawText(e.target.value)}
                     placeholder="Enter your requirements here...&#10;&#10;Example:&#10;User can login to the system&#10;User can search for products&#10;User can add items to cart..."
-                    className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                    className="w-full px-4 py-3 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
 
                   <button
@@ -256,8 +256,8 @@ function Extraction() {
 
           {/* RIGHT PANEL: RESULTS */}
           <div>
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Results
               </h2>
 
@@ -266,33 +266,33 @@ function Extraction() {
               ) : results ? (
                 <div>
                   {/* Summary */}
-                  <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
-                    <h3 className="font-semibold text-indigo-900 mb-2">
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-6">
+                    <h3 className="font-semibold text-indigo-900 dark:text-indigo-200 mb-2">
                       Extraction Summary
                     </h3>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-indigo-600">Extracted:</span>{' '}
-                        <span className="font-bold">{results.extracted_count}</span>
+                        <span className="text-indigo-600 dark:text-indigo-400">Extracted:</span>{' '}
+                        <span className="font-bold text-indigo-900 dark:text-indigo-200">{results.extracted_count}</span>
                       </div>
                       <div>
-                        <span className="text-indigo-600">Stored:</span>{' '}
-                        <span className="font-bold">{results.stored_count}</span>
+                        <span className="text-indigo-600 dark:text-indigo-400">Stored:</span>{' '}
+                        <span className="font-bold text-indigo-900 dark:text-indigo-200">{results.stored_count}</span>
                       </div>
                       <div>
-                        <span className="text-indigo-600">Duplicates:</span>{' '}
-                        <span className="font-bold">{results.duplicate_count || 0}</span>
+                        <span className="text-indigo-600 dark:text-indigo-400">Duplicates:</span>{' '}
+                        <span className="font-bold text-indigo-900 dark:text-indigo-200">{results.duplicate_count || 0}</span>
                       </div>
                       <div>
-                        <span className="text-indigo-600">Time:</span>{' '}
-                        <span className="font-bold">{results.processing_time_seconds}s</span>
+                        <span className="text-indigo-600 dark:text-indigo-400">Time:</span>{' '}
+                        <span className="font-bold text-indigo-900 dark:text-indigo-200">{results.processing_time_seconds}s</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Use Case List */}
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-900">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">
                       Generated Use Cases ({results.results?.length || 0})
                     </h3>
                     
@@ -302,20 +302,20 @@ function Extraction() {
                           key={idx}
                           className={`p-4 border rounded-lg ${
                             uc.status === 'stored'
-                              ? 'border-green-200 bg-green-50'
-                              : 'border-yellow-200 bg-yellow-50'
+                              ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
+                              : 'border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20'
                           }`}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <h4 className="font-medium text-gray-900">
+                              <h4 className="font-medium text-gray-900 dark:text-white">
                                 {uc.title}
                               </h4>
                               <span
                                 className={`text-xs px-2 py-1 rounded-full inline-block mt-2 ${
                                   uc.status === 'stored'
-                                    ? 'bg-green-200 text-green-800'
-                                    : 'bg-yellow-200 text-yellow-800'
+                                    ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200'
+                                    : 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'
                                 }`}
                               >
                                 {uc.status === 'stored' ? '✅ Stored' : '🔄 Duplicate'}
@@ -325,8 +325,8 @@ function Extraction() {
                               <div className="mt-3 space-y-3">
                                 {Array.isArray(uc.preconditions) && uc.preconditions.length > 0 && (
                                   <div>
-                                    <div className="text-xs font-semibold text-gray-700">Preconditions</div>
-                                    <ul className="list-disc list-inside text-xs text-gray-700">
+                                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Preconditions</div>
+                                    <ul className="list-disc list-inside text-xs text-gray-700 dark:text-gray-400">
                                       {uc.preconditions.map((p, i) => (
                                         <li key={i}>{p}</li>
                                       ))}
@@ -342,8 +342,8 @@ function Extraction() {
                                     : [];
                                   return flows.length > 0 ? (
                                     <div>
-                                      <div className="text-xs font-semibold text-gray-700">Main Flows</div>
-                                      <div className="space-y-1 text-xs text-gray-700">
+                                      <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Main Flows</div>
+                                      <div className="space-y-1 text-xs text-gray-700 dark:text-gray-400">
                                         {flows.map((flow, fi) => (
                                           <div key={fi}>
                                             {Array.isArray(flow) ? (
@@ -370,12 +370,12 @@ function Extraction() {
 
                                 {Array.isArray(uc.sub_flows) && uc.sub_flows.length > 0 && (
                                   <div>
-                                    <div className="text-xs font-semibold text-gray-700">Sub Flows</div>
-                                    <div className="space-y-1 text-xs text-gray-700">
+                                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Sub Flows</div>
+                                    <div className="space-y-1 text-xs text-gray-700 dark:text-gray-400">
                                       {uc.sub_flows.map((sub, si) => (
                                         <div key={si}>
                                           {typeof sub?.title === 'string' && (
-                                            <div className="font-medium text-gray-700">{sub.title}</div>
+                                            <div className="font-medium text-gray-700 dark:text-gray-300">{sub.title}</div>
                                           )}
                                           {Array.isArray(sub?.steps) ? (
                                             <ol className="list-decimal list-inside">
@@ -398,8 +398,8 @@ function Extraction() {
 
                                 {Array.isArray(uc.alternate_flows) && uc.alternate_flows.length > 0 && (
                                   <div>
-                                    <div className="text-xs font-semibold text-gray-700">Alternate Flows</div>
-                                    <ul className="list-disc list-inside text-xs text-gray-700">
+                                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Alternate Flows</div>
+                                    <ul className="list-disc list-inside text-xs text-gray-700 dark:text-gray-400">
                                       {uc.alternate_flows.map((alt, i) => (
                                         <li key={i}>{alt}</li>
                                       ))}
@@ -409,8 +409,8 @@ function Extraction() {
 
                                 {Array.isArray(uc.outcomes) && uc.outcomes.length > 0 && (
                                   <div>
-                                    <div className="text-xs font-semibold text-gray-700">Outcomes</div>
-                                    <ul className="list-disc list-inside text-xs text-gray-700">
+                                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Outcomes</div>
+                                    <ul className="list-disc list-inside text-xs text-gray-700 dark:text-gray-400">
                                       {uc.outcomes.map((o, i) => (
                                         <li key={i}>{o}</li>
                                       ))}
@@ -420,8 +420,8 @@ function Extraction() {
 
                                 {Array.isArray(uc.stakeholders) && uc.stakeholders.length > 0 && (
                                   <div>
-                                    <div className="text-xs font-semibold text-gray-700">Stakeholders</div>
-                                    <div className="text-xs text-gray-700">{uc.stakeholders.join(', ')}</div>
+                                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Stakeholders</div>
+                                    <div className="text-xs text-gray-700 dark:text-gray-400">{uc.stakeholders.join(', ')}</div>
                                   </div>
                                 )}
                               </div>
@@ -430,32 +430,32 @@ function Extraction() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-gray-500 text-sm">No use cases extracted</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">No use cases extracted</p>
                     )}
                   </div>
 
                   {/* Validation Results */}
                   {results.validation_results && results.validation_results.length > 0 && (
                     <div className="mt-6">
-                      <h3 className="font-semibold text-gray-900 mb-3">
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
                         Quality Validation
                       </h3>
                       <div className="space-y-2">
                         {results.validation_results.map((validation, idx) => (
                           <div
                             key={idx}
-                            className="text-sm p-3 border rounded bg-gray-50"
+                            className="text-sm p-3 border dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-700"
                           >
-                            <div className="font-medium text-gray-900 mb-1">
+                            <div className="font-medium text-gray-900 dark:text-white mb-1">
                               {validation.title}
                             </div>
                             {validation.quality_score && (
-                              <div className="text-gray-600">
+                              <div className="text-gray-600 dark:text-gray-400">
                                 Quality: {validation.quality_score}/100
                               </div>
                             )}
                             {validation.issues && validation.issues.length > 0 && (
-                              <div className="text-yellow-600 text-xs mt-1">
+                              <div className="text-yellow-600 dark:text-yellow-400 text-xs mt-1">
                                 {validation.issues.length} issue(s) found
                               </div>
                             )}
@@ -466,7 +466,7 @@ function Extraction() {
                   )}
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                   <p className="text-4xl mb-4">📋</p>
                   <p>Results will appear here after extraction</p>
                 </div>

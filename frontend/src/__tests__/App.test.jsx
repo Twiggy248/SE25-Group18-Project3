@@ -4,6 +4,27 @@ import { render, screen } from '@testing-library/react';
 import App from '../App';
 import { MemoryRouter } from 'react-router-dom';
 
+
+vi.mock('react-toastify', () => ({
+  ToastContainer: () => <div data-testid="toast-container" />,
+  toast: {
+    error: vi.fn(),
+    success: vi.fn()
+  }
+}));
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    BrowserRouter: ({ children }) => <div>{children}</div>
+  };
+});
+
+vi.mock('../components/ProtectedRoute', () => ({
+  default: ({ children }) => <>{children}</>
+}));
+
 // Mock all route components
 vi.mock('../pages/Chat', () => ({
   default: () => <div data-testid="chat-page">Chat Page</div>
@@ -30,11 +51,11 @@ vi.mock('../pages/UseCaseRefine', () => ({
 }));
 
 // Mock layout components
-vi.mock('../components/Layout/Sidebar', () => ({
+vi.mock('../components/layout/Sidebar', () => ({
   default: () => <div data-testid="sidebar">Sidebar</div>
 }));
 
-vi.mock('../components/Layout/Header', () => ({
+vi.mock('../components/layout/Header', () => ({
   default: () => <div data-testid="header">Header</div>
 }));
 

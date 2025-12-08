@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import UseCaseCard from '../UseCaseCard'
 import { api } from '../../api/client'
 import { toast } from 'react-toastify'
+import { ThemeProvider } from '../../context/ThemeContext'
 
 // Mock dependencies
 vi.mock('react-router-dom', async () => {
@@ -45,7 +46,9 @@ const mockUseCase = {
 const renderWithRouter = (component) => {
   return render(
     <BrowserRouter>
-      {component}
+      <ThemeProvider>
+        {component}
+      </ThemeProvider>
     </BrowserRouter>
   )
 }
@@ -63,7 +66,8 @@ describe('UseCaseCard Component', () => {
     renderWithRouter(<UseCaseCard useCase={mockUseCase} />)
     
     expect(screen.getByText(mockUseCase.title)).toBeInTheDocument()
-    expect(screen.getByText(mockUseCase.stakeholders.join(', '))).toBeInTheDocument()
+    expect(screen.getByText('User')).toBeInTheDocument()
+    expect(screen.getByText('Admin')).toBeInTheDocument()
     expect(screen.getByText('▶ Show Details')).toBeInTheDocument()
   })
 
@@ -107,10 +111,12 @@ describe('UseCaseCard Component', () => {
     const select = screen.getByRole('combobox');
     fireEvent.change(select, { target: { value: 'more_sub_flows' } });
     
-    // Click refine in modal
-    const refineButton = screen.getAllByRole('button').find(btn => 
+    const allRefineButtons = screen.getAllByRole('button').filter(btn => 
       btn.textContent.includes('✨') && btn.textContent.includes('Refine')
     );
+
+    // Click refine in modal
+    const refineButton = allRefineButtons[allRefineButtons.length - 1];
     fireEvent.click(refineButton);
     
     // Verify API call and notifications
@@ -126,6 +132,8 @@ describe('UseCaseCard Component', () => {
   })
 
   it('handles refinement errors', async () => {
+    api.refineUseCase.mockReset();
+
     const error = new Error('API Error');
     error.response = { data: { detail: 'Refinement failed' } };
     api.refineUseCase.mockRejectedValueOnce(error);
@@ -140,12 +148,17 @@ describe('UseCaseCard Component', () => {
     // Click refine button to open modal
     fireEvent.click(screen.getByText('✨ Refine'));
     
-    // Click the refine button in modal
-    const modalRefineButton = screen.getAllByRole('button').find(btn => 
+    await waitFor(() => {
+      expect(screen.getByText('Refine Use Case')).toBeInTheDocument();
+    });
+
+    const allRefineButtons = screen.getAllByRole('button').filter(btn => 
       btn.textContent.includes('✨') && btn.textContent.includes('Refine')
     );
+
+    const modalRefineButton = allRefineButtons[allRefineButtons.length - 1]; 
     fireEvent.click(modalRefineButton);
-    
+   
     // Wait for error handling
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('Refinement failed');
@@ -182,32 +195,28 @@ describe('UseCaseCard Component', () => {
     renderWithRouter(<UseCaseCard useCase={minimalUseCase} />)
     
     expect(screen.getByText('Minimal Use Case')).toBeInTheDocument()
-    expect(screen.getByText('N/A')).toBeInTheDocument() // For stakeholders
+    expect(screen.getByText('Stakeholders:')).toBeInTheDocument() 
+
+    //will verify stakeholders container is empty 
+    const stakeholdersContainer = screen.getByText('Stakeholders:').nextElementSibling
+    expect(stakeholdersContainer).toBeEmptyDOMElement()
   })
 
   it('handles different flow formats', () => {
     const useCaseWithDifferentFlows = {
       ...mockUseCase,
-      main_flows: [
-        ['Step 1', 'Step 2'],
-        { steps: ['Step 3', 'Step 4'] },
-        'Single step flow'
-      ]
+      main_flow: ['Step 1', 'Step 2', 'Step 3', 'Step 4', 'Single step flow'] // flat array
     };
     
-    renderWithRouter(<UseCaseCard useCase={useCaseWithDifferentFlows} />);
-    
-    // Show details
-    fireEvent.click(screen.getByText('▶ Show Details'));
+    renderWithRouter(<UseCaseCard useCase={useCaseWithDifferentFlows} compact={true}/>);
     
     // Check if all flow formats are rendered
     expect(screen.getByText('Step 1')).toBeInTheDocument();
     expect(screen.getByText('Step 3')).toBeInTheDocument();
-    expect(screen.getByText('• Single step flow')).toBeInTheDocument();
+    expect(screen.getByText('Single step flow')).toBeInTheDocument();
   });
 
   it('disables refinement button while processing', async () => {
-    // Create a promise that we can resolve manually
     let resolveRefine;
     const refinePromise = new Promise(resolve => {
       resolveRefine = () => resolve({ data: { success: true } });
@@ -224,17 +233,19 @@ describe('UseCaseCard Component', () => {
     
     // Click refine button to open modal
     fireEvent.click(screen.getByText('✨ Refine'));
+
+    const modal = screen.getByText('Refine Use Case').closest('div');
+    const modalWithin = within(modal);
     
     // Click the refine button in modal
-    const modalRefineButton = screen.getAllByRole('button').find(btn => 
-      btn.textContent.includes('✨') && btn.textContent.includes('Refine')
-    );
+    const modalRefineButton = modalWithin.getByRole('button', {name: /Refine/i});
     fireEvent.click(modalRefineButton);
     
+    const refineBtn = modalWithin.getByRole('button', {name: /Refining/i});
     // Button should be disabled and show loading state
-    expect(modalRefineButton.disabled).toBe(true);
-    expect(screen.getByText('⏳')).toBeInTheDocument();
-    expect(screen.getByText('Refining')).toBeInTheDocument();
+    expect(refineBtn).toBeDisabled();
+    expect(refineBtn).toHaveTextContent('⏳');
+    expect(refineBtn).toHaveTextContent('Refining');
 
     // Resolve the refinement promise
     resolveRefine();

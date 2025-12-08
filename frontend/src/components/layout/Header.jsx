@@ -10,13 +10,14 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import ThemeProvider, { ThemeControls, ThemeContext } from '../../context/ThemeContext';
 import logoImage from "../../assets/logoo.png";
 
 function Header() {
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-2">
-      <div className="flex items-center">
-        {/* Logo - Just RE part */}
+    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 transition-colors">
+      <div className="flex items-center justify-between">
+        {/* Logo */}
         <Link to="/" className="flex items-center">
           <div className="w-9 h-9 overflow-hidden">
             <img 
@@ -27,6 +28,9 @@ function Header() {
             />
           </div>
         </Link>
+
+        {/* Theme Controls (Now a menu button) */}
+        <ThemeControls />
       </div>
     </header>
   );

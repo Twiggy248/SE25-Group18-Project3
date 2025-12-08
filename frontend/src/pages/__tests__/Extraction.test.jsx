@@ -70,8 +70,8 @@ describe('Extraction Component', () => {
     expect(screen.getByLabelText('Domain')).toBeInTheDocument();
     
     // Check tabs
-    expect(screen.getByText('📝 Text Input')).toBeInTheDocument();
-    expect(screen.getByText('📁 File Upload')).toBeInTheDocument();
+    expect(screen.getByText(/Text Input/i)).toBeInTheDocument();
+    expect(screen.getByText(/File Upload/)).toBeInTheDocument();
     
     // Check session ID display
     expect(screen.getByText('Session ID:')).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe('Extraction Component', () => {
     expect(screen.getByLabelText('Requirements Text')).toBeInTheDocument();
     
     // Switch to file upload
-    await userEvent.click(screen.getByText('📁 File Upload'));
+    await userEvent.click(screen.getByText(/File Upload/i));
     expect(screen.getByTestId('file-uploader')).toBeInTheDocument();
     
     // Switch back to text input
@@ -135,7 +135,10 @@ describe('Extraction Component', () => {
     };
 
     it('handles text extraction successfully', async () => {
-      api.extractFromText.mockResolvedValueOnce(mockExtractResponse);
+      api.extractFromText.mockImplementation(async () =>{
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return mockExtractResponse;
+      });
       
       render(<Extraction />);
       
@@ -148,7 +151,7 @@ describe('Extraction Component', () => {
       await userEvent.click(extractButton);
       
       // Check loading state (LoadingSpinner shows message in a <p> tag)
-      expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+      expect(screen.getByText('⏳ Extracting...')).toBeInTheDocument();
       // Wait for results
       await waitFor(() => {
         expect(screen.getByText('Extraction Summary')).toBeInTheDocument();
@@ -167,7 +170,10 @@ describe('Extraction Component', () => {
       expect(screen.getByText('Test Use Case 2')).toBeInTheDocument();
       
       // Check summary stats
-      expect(screen.getByText('2')).toBeInTheDocument(); // Extracted count
+      const extractedLabel = screen.getByText('Extracted:');
+      expect(extractedLabel.parentElement).toHaveTextContent(/^Extracted:\s+2$/);
+
+
       expect(screen.getByText('1.5s')).toBeInTheDocument(); // Processing time
       
       // Verify session update
@@ -231,7 +237,7 @@ describe('Extraction Component', () => {
       render(<Extraction />);
       
       // Switch to file upload tab
-      await userEvent.click(screen.getByText('📁 File Upload'));
+      await userEvent.click(screen.getByText(/File Upload/i));
       
       // Trigger file upload
       const uploadButton = screen.getByText('Upload File');
@@ -259,7 +265,7 @@ describe('Extraction Component', () => {
       
       render(<Extraction />);
       
-      await userEvent.click(screen.getByText('📁 File Upload'));
+      await userEvent.click(screen.getByText(/File Upload/i));
       await userEvent.click(screen.getByText('Upload File'));
       
       await waitFor(() => {

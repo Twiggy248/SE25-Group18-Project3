@@ -84,20 +84,20 @@ function Query() {
       <SessionHeader />
 
       {/* Content */}
-      <div className="flex-1 p-8 overflow-y-auto">
+      <div className="flex-1 p-8 overflow-y-auto bg-gray-50 dark:bg-gray-900">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
             Query Requirements 💬
           </h1>
 
             {/* Chat Container */}
-            <div className="bg-white rounded-lg shadow-sm border">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border">
               <div className="h-96 overflow-y-auto p-6 space-y-4">
                 {conversation.length === 0 ? (
-                  <div className="text-center text-gray-500 py-12">
+                  <div className="text-center text-gray-500 dark:text-gray-400 py-12">
                     <p className="text-4xl mb-4">💬</p>
                     <p>Ask questions about your requirements</p>
-                    <p className="text-sm mt-2">
+                    <p className="text-sm mt-2 dark:text-gray-500">
                       Example: "What are the main actors?" or "Which use cases involve payment?"
                     </p>
                   </div>
@@ -113,15 +113,15 @@ function Query() {
                         className={`max-w-xl rounded-lg p-4 ${
                           message.role === 'user'
                             ? 'bg-primary text-white'
-                            : 'bg-gray-100 text-gray-900'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                         }`}
                       >
                         <p className="whitespace-pre-wrap">{message.content}</p>
                         {message.relevant_use_cases &&
                           message.relevant_use_cases.length > 0 && (
-                            <div className="mt-2 pt-2 border-t border-gray-300">
-                              <p className="text-xs font-semibold mb-1">Relevant Use Cases:</p>
-                              <ul className="text-xs list-disc list-inside">
+                            <div className="mt-2 pt-2 border-t border-gray-300 dark:border-gray-600">
+                              <p className="text-xs font-semibold mb-1 dark:text-gray-300">Relevant Use Cases:</p>
+                              <ul className="text-xs list-disc list-inside dark:text-gray-400">
                                 {message.relevant_use_cases.map((uc, i) => (
                                   <li key={i}>{uc}</li>
                                 ))}
@@ -135,11 +135,11 @@ function Query() {
 
                 {loading && (
                   <div className="flex justify-start">
-                    <div className="bg-gray-100 rounded-lg p-4">
+                    <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
                       <div className="flex gap-2">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
+                        <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce delay-100"></div>
+                        <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce delay-200"></div>
                       </div>
                     </div>
                   </div>
@@ -147,7 +147,7 @@ function Query() {
               </div>
 
               {/* Input */}
-              <div className="border-t p-4">
+              <div className="border-t p-4 dark:border-gray-700">
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -155,13 +155,13 @@ function Query() {
                     onChange={(e) => setQuestion(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Ask a question..."
-                    className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="flex-1 px-4 py-2 border dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
                     disabled={loading}
                   />
                   <button
                     onClick={handleQuery}
                     disabled={loading || !question.trim()}
-                    className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-primary bg-indigo-600 dark:bg-indigo-500 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Send
                   </button>
