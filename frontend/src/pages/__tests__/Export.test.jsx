@@ -30,7 +30,7 @@ vi.mock('../../store/useSessionStore', () => ({
   default: vi.fn()
 }))
 
-vi.mock('../components/Layout/SessionHeader', () => ({
+vi.mock('../components/layout/SessionHeader', () => ({
   default: () => <div data-testid="session-header">Session Header</div>
 }))
 

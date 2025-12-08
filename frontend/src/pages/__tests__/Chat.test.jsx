@@ -8,9 +8,16 @@ import { toast } from 'react-toastify';
 import useSessionStore from '../../store/useSessionStore';
 
 // Mock dependencies
-vi.mock('react-router-dom', () => ({
-  useNavigate: () => vi.fn(),
-}));
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+    useLocation: () => ({
+      pathname: '/',
+    }),
+  };
+});
 
 vi.mock('../../context/ThemeContext', () => ({
   useTheme: () => ({
@@ -65,7 +72,7 @@ vi.mock('../../components/FileUploader', () => ({
   )
 }));
 
-vi.mock('../../components/Layout/SessionHeader', () => ({
+vi.mock('../../components/layout/SessionHeader', () => ({
   default: () => <div data-testid="session-header">Session Header</div>
 }));
 

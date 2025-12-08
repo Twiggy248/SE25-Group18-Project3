@@ -70,8 +70,8 @@ describe('Extraction Component', () => {
     expect(screen.getByLabelText('Domain')).toBeInTheDocument();
     
     // Check tabs
-    expect(screen.getByText('📝 Text Input')).toBeInTheDocument();
-    expect(screen.getByText('📁 File Upload')).toBeInTheDocument();
+    expect(screen.getByText(/Text Input/i)).toBeInTheDocument();
+    expect(screen.getByText(/File Upload/)).toBeInTheDocument();
     
     // Check session ID display
     expect(screen.getByText('Session ID:')).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe('Extraction Component', () => {
     expect(screen.getByLabelText('Requirements Text')).toBeInTheDocument();
     
     // Switch to file upload
-    await userEvent.click(screen.getByText('📁 File Upload'));
+    await userEvent.click(screen.getByText(/File Upload/i));
     expect(screen.getByTestId('file-uploader')).toBeInTheDocument();
     
     // Switch back to text input
@@ -237,7 +237,7 @@ describe('Extraction Component', () => {
       render(<Extraction />);
       
       // Switch to file upload tab
-      await userEvent.click(screen.getByText('📁 File Upload'));
+      await userEvent.click(screen.getByText(/File Upload/i));
       
       // Trigger file upload
       const uploadButton = screen.getByText('Upload File');
@@ -265,7 +265,7 @@ describe('Extraction Component', () => {
       
       render(<Extraction />);
       
-      await userEvent.click(screen.getByText('📁 File Upload'));
+      await userEvent.click(screen.getByText(/File Upload/i));
       await userEvent.click(screen.getByText('Upload File'));
       
       await waitFor(() => {
