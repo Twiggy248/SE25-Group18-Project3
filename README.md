@@ -30,7 +30,7 @@
 - **[Code of Conduct](CODE_OF_CONDUCT.md)** - Community guidelines and behavior standards
 ---
 ### Project Demo 
-![See ReqEngine in Action!](https://www.youtube.com/watch?v=MadqNQqqezA)
+[![See ReqEngine in Action!](https://img.youtube.com/vi/MadqNQqqezA/maxresdefault.jpg)](https://www.youtube.com/watch?v=MadqNQqqezA)
 
 ---
 
